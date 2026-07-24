@@ -72,4 +72,12 @@
     <style name="Theme.Hail.AppBarOverlay" parent="ThemeOverlay.Material3.ActionBar"/>
 
     <style name="Theme.Hail.PopupOverlay" parent="ThemeOverlay.Material3"/>
+
+    <style name="ShapeAppearance.Hail.Fab" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">18dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Hail.Icon" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">20%</item>
+    </style>
 </resources>

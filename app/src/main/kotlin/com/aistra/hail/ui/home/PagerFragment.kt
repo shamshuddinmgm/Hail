@@ -100,25 +100,18 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
                 )
             )
             adapter = pagerAdapter
+            setHasFixedSize(true)
+            setItemViewCacheSize(24)
+            itemAnimator = null
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
                     when (newState) {
                         RecyclerView.SCROLL_STATE_IDLE -> activity.fab.run {
-                            postDelayed({
-                                if (tag == true) {
-                                    show()
-                                    activity.fabWhitelist.show()
-                                    activity.fabSearch.show()
-                                }
-                            }, 1000)
+                            postDelayed({ if (tag == true) show() }, 1000)
                         }
 
-                        RecyclerView.SCROLL_STATE_DRAGGING -> {
-                            activity.fab.hide()
-                            activity.fabWhitelist.hide()
-                            activity.fabSearch.hide()
-                        }
+                        RecyclerView.SCROLL_STATE_DRAGGING -> activity.fab.hide()
                     }
                 }
             })
@@ -155,17 +148,22 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             setListFrozen(true)
             true
         }
-        activity.fabWhitelist.setOnClickListener { showWhitelistDialog() }
-        activity.fabSearch.setOnClickListener { expandSearch() }
+        updateFreezeFabLabel()
     }
 
-    private var searchMenuItem: MenuItem? = null
-
-    private fun expandSearch() {
+    fun expandSearch() {
         val item = searchMenuItem ?: return
         item.isVisible = true
         item.expandActionView()
     }
+
+    private fun updateFreezeFabLabel() {
+        val mode = HailData.workingModeForTag(tag.id)
+        val short = HailData.workingModeShortLabel(mode)
+        activity.fab.text = getString(R.string.action_freeze_mode, short)
+    }
+
+    private var searchMenuItem: MenuItem? = null
 
     internal fun updateCurrentList() = HailData.checkedList.filter {
         if (query.isEmpty()) tag.id in it.tagIdList
@@ -184,8 +182,9 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
         HailData.showUninstalled || it.applicationInfo != null
     }.sortedWith(NameComparator).let {
         binding.empty.isVisible = it.isEmpty()
-        pagerAdapter.submitList(it)
+        pagerAdapter.submitList(it.toList())
         app.setAutoFreezeService()
+        if (isResumed) updateFreezeFabLabel()
     }
 
     private fun updateBarTitle() {
@@ -614,16 +613,17 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
                     AppManager.isAppFrozen(info.packageName, if (frozen) mode else info.frozenMode ?: mode) != frozen
                 }
             }
-            val result = withContext(Dispatchers.IO) {
-                AppManager.setListFrozen(frozen, filtered)
-            }
+            val result = AppManager.setListFrozenChunked(frozen, filtered)
             when (result) {
                 null -> HUI.showToast(
                     R.string.permission_denied_pkg,
                     AppManager.lastDeniedPackage ?: getString(R.string.permission_denied)
                 )
                 else -> {
-                    if (updateList) updateCurrentList()
+                    if (updateList) {
+                        pagerAdapter.invalidateContentFlags()
+                        updateCurrentList()
+                    }
                     HUI.showToast(
                         if (frozen) R.string.msg_freeze else R.string.msg_unfreeze, result
                     )
@@ -1040,6 +1040,12 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
 
     override fun onMenuItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.action_home -> {
+                (parentFragment as HomeFragment).goToDefaultTag()
+            }
+
+            R.id.action_whitelist -> showWhitelistDialog()
+
             R.id.action_home_shortcuts -> {
                 (parentFragment as HomeFragment).showPinShortcutsDialog()
             }
@@ -1107,7 +1113,7 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
         inflater.inflate(R.menu.menu_home, menu)
         val searchItem = menu.findItem(R.id.action_search)
         searchMenuItem = searchItem
-        searchItem.isVisible = query.isNotEmpty()
+        searchItem.isVisible = true
         val searchView = searchItem.actionView as SearchView
         if (HailData.nineKeySearch) {
             val editText = searchView.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)
@@ -1116,7 +1122,6 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
 
         // Restore active query if one exists (e.g. after keyboard dismiss rebuilds the menu)
         if (query.isNotEmpty()) {
-            searchItem.isVisible = true
             searchItem.expandActionView()
             searchView.setQuery(query, false)
             searchView.clearFocus()  // show text without re-opening keyboard
@@ -1140,13 +1145,9 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
 
         // Only clear the query when the user explicitly closes the search (X button)
         searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
-            override fun onMenuItemActionExpand(item: MenuItem): Boolean {
-                item.isVisible = true
-                return true
-            }
+            override fun onMenuItemActionExpand(item: MenuItem): Boolean = true
             override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
                 query = ""
-                item.isVisible = false
                 tabs.isVisible = tabs.tabCount > 1
                 updateCurrentList()
                 return true

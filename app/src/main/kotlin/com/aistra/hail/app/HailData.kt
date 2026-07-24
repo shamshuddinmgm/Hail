@@ -327,6 +327,19 @@ object HailData {
         return if (index in entries.indices) entries[index] else mode
     }
 
+    /** Short label for Freeze FAB (Dis / Sus / Hide / Stop / …). */
+    fun workingModeShortLabel(mode: String?): String {
+        val effective = mode?.takeIf { it.isNotEmpty() } ?: workingMode
+        return when {
+            effective == MODE_DEFAULT || effective.isEmpty() -> app.getString(R.string.mode_short_global)
+            effective.endsWith(DISABLE) -> app.getString(R.string.mode_short_disable)
+            effective.endsWith(SUSPEND) -> app.getString(R.string.mode_short_suspend)
+            effective.endsWith(HIDE) -> app.getString(R.string.mode_short_hide)
+            effective.endsWith(STOP) -> app.getString(R.string.mode_short_stop)
+            else -> app.getString(R.string.mode_short_global)
+        }
+    }
+
     fun changeAppsSort(sort: String) = sp.edit { putString(SORT_BY, sort) }
 
     fun changeAppsFilter(filter: String, enabled: Boolean) = sp.edit { putBoolean(filter, enabled) }

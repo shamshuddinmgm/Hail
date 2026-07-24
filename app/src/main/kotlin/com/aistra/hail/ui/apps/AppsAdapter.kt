@@ -30,7 +30,6 @@ class AppsAdapter : ListAdapter<ApplicationInfo, AppsAdapter.ViewHolder>(DIFF) {
 
     lateinit var onItemClickListener: OnItemClickListener
     lateinit var onItemCheckedChangeListener: OnItemCheckedChangeListener
-    private var loadIconJob: Job? = null
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder = ViewHolder(
         ItemAppsBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -41,12 +40,19 @@ class AppsAdapter : ListAdapter<ApplicationInfo, AppsAdapter.ViewHolder>(DIFF) {
         holder.bindInfo(info)
     }
 
+    override fun onViewRecycled(holder: ViewHolder) {
+        holder.loadIconJob?.cancel()
+        holder.loadIconJob = null
+        super.onViewRecycled(holder)
+    }
+
     fun onDestroy() {
-        if (loadIconJob?.isActive == true) loadIconJob?.cancel()
+        // jobs cancelled per ViewHolder
     }
 
     inner class ViewHolder(private val binding: ItemAppsBinding) : RecyclerView.ViewHolder(binding.root) {
         lateinit var info: ApplicationInfo
+        var loadIconJob: Job? = null
         private val pkg get() = info.packageName
 
         /**
@@ -68,6 +74,7 @@ class AppsAdapter : ListAdapter<ApplicationInfo, AppsAdapter.ViewHolder>(DIFF) {
             updating = true
             this.info = info
             val frozen = AppManager.isAppFrozen(pkg)
+            loadIconJob?.cancel()
 
             binding.appIcon.apply {
                 loadIconJob = AppIconCache.loadIconBitmapAsync(

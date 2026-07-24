@@ -16,4 +16,8 @@
         android:id="@+id/nav_about"
         android:icon="@drawable/ic_info_selector"
         android:title="@string/title_about" />
+    <item
+        android:id="@+id/nav_search"
+        android:icon="@drawable/ic_outline_search"
+        android:title="@string/action_search" />
 </menu>

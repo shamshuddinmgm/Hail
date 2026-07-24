@@ -14,11 +14,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.aistra.hail"
+        applicationId = "com.shamshuddinmgm.hail"
         minSdk = 23
         targetSdk = 36
-        versionCode = 35
-        versionName = "1.11.0"
+        versionCode = 36
+        versionName = "1.12.0"
     }
 
     buildTypes {

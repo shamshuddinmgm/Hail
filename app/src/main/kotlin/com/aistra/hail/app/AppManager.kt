@@ -5,6 +5,7 @@ import com.aistra.hail.BuildConfig
 import com.aistra.hail.utils.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 
 object AppManager {
     /** Package name of the first app that returned a permission denial in the last setListFrozen call. */
@@ -69,6 +70,45 @@ object AppManager {
         }
         if (i > 0) HailData.saveApps()
         return if (denied && i == 0) null else if (i == 1) name else i.toString()
+    }
+
+    /**
+     * Freeze/unfreeze in chunks so the UI can refresh and the main thread stays responsive
+     * while Shizuku/IPC work progresses.
+     */
+    suspend fun setListFrozenChunked(
+        frozen: Boolean,
+        appsWithModes: List<Pair<AppInfo, String>>,
+        chunkSize: Int = 12,
+        onChunk: (suspend (done: Int, total: Int) -> Unit)? = null
+    ): String? = withContext(Dispatchers.IO) {
+        lastDeniedPackage = null
+        val excludeMe = appsWithModes.filter { it.first.packageName != BuildConfig.APPLICATION_ID }
+        var i = 0
+        var denied = false
+        var name = String()
+        val total = excludeMe.size
+        excludeMe.chunked(chunkSize.coerceAtLeast(1)).forEach { chunk ->
+            chunk.forEach { (info, mode) ->
+                when {
+                    setAppFrozen(info.packageName, frozen, mode) -> {
+                        i++
+                        name = info.name.toString()
+                        if (frozen) info.frozenMode = mode
+                        else info.frozenMode = null
+                    }
+
+                    info.applicationInfo != null -> {
+                        denied = true
+                        if (lastDeniedPackage == null) lastDeniedPackage = info.packageName
+                    }
+                }
+            }
+            onChunk?.invoke(i, total)
+            yield()
+        }
+        if (i > 0) HailData.saveApps()
+        if (denied && i == 0) null else if (i == 1) name else i.toString()
     }
 
     /** Convenience: same [mode] for every app. */

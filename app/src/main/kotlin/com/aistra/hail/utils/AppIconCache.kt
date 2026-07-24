@@ -31,14 +31,12 @@ object AppIconCache : CoroutineScope {
         }
     }
 
-    override val coroutineContext: CoroutineContext get() = Dispatchers.Main
+    override val coroutineContext: CoroutineContext get() = Dispatchers.Main.immediate
 
     private val lruCache: LruCache<Triple<String, Int, Int>, Bitmap>
 
     private val dispatcher: CoroutineDispatcher
 
-    // Separate single low-priority thread for background preloading so it never
-    // competes with real icon loads (which use the regular dispatcher above).
     private val preloadDispatcher: CoroutineDispatcher by lazy {
         Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "icon-preload").apply { priority = Thread.NORM_PRIORITY - 1 }
@@ -51,19 +49,19 @@ object AppIconCache : CoroutineScope {
 
     private val cf by lazy { ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) }) }
 
+    private val tagKey = R.id.app_icon
+
     init {
-        // Initialize app icon lru cache
         val maxMemory = Runtime.getRuntime().maxMemory() / 1024
         val availableCacheSize = (maxMemory / 4).toInt()
         lruCache = AppIconLruCache(availableCacheSize)
 
-        // Initialize load icon scheduler
         val availableProcessorsCount = try {
             Runtime.getRuntime().availableProcessors()
         } catch (ignored: Exception) {
             1
         }
-        val threadCount = 1.coerceAtLeast(availableProcessorsCount / 2)
+        val threadCount = 2.coerceAtLeast(availableProcessorsCount / 2)
         val loadIconExecutor: Executor = Executors.newFixedThreadPool(threadCount)
         dispatcher = loadIconExecutor.asCoroutineDispatcher()
         shrinkNonAdaptiveIcons = HailData.synthesizeAdaptiveIcons
@@ -122,6 +120,11 @@ object AppIconCache : CoroutineScope {
         view: ImageView,
         setColorFilter: Boolean = false
     ): Job {
+        // Token + filter applied synchronously so recycle/rebind races cannot leave stale grayscale.
+        val token = info.packageName to setColorFilter
+        view.setTag(tagKey, token)
+        view.colorFilter = if (setColorFilter) cf else null
+
         return launch {
             val size = view.measuredWidth.let {
                 if (it > 0) it else context.resources.getDimensionPixelSize(R.dimen.app_icon_size)
@@ -131,6 +134,7 @@ object AppIconCache : CoroutineScope {
             } else {
                 val cachedBitmap = get(info.packageName, userId, size)
                 if (cachedBitmap != null) {
+                    if (view.getTag(tagKey) != token) return@launch
                     view.setImageBitmap(cachedBitmap)
                     view.colorFilter = if (setColorFilter) cf else null
                     return@launch
@@ -142,12 +146,12 @@ object AppIconCache : CoroutineScope {
                     getOrLoadBitmap(context, info, userId, size)
                 }
             } catch (e: CancellationException) {
-                // do nothing if canceled
                 return@launch
             } catch (e: Throwable) {
                 null
             }
 
+            if (view.getTag(tagKey) != token) return@launch
             if (bitmap != null) {
                 view.setImageBitmap(bitmap)
             } else {

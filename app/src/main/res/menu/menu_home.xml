@@ -1,6 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools">
+    <!-- Order LTR left→right so right edge reads: ⋮ > select > search > shortcuts > whitelist > home -->
+    <item
+            android:id="@+id/action_home"
+            android:icon="@drawable/ic_outline_home"
+            android:title="@string/title_home"
+            app:showAsAction="always"
+            tools:ignore="AlwaysShowAction"/>
+    <item
+            android:id="@+id/action_whitelist"
+            android:icon="@drawable/ic_outline_lock"
+            android:title="@string/whitelisted_apps"
+            app:showAsAction="always"
+            tools:ignore="AlwaysShowAction"/>
     <item
             android:id="@+id/action_home_shortcuts"
             android:icon="@drawable/ic_outline_add_to_home"
@@ -11,7 +25,6 @@
             android:id="@+id/action_search"
             android:icon="@drawable/ic_outline_search"
             android:title="@string/action_search"
-            android:visible="false"
             app:actionViewClass="androidx.appcompat.widget.SearchView"
             app:showAsAction="always|collapseActionView"
             tools:ignore="AlwaysShowAction"/>

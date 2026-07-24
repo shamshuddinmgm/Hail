@@ -16,26 +16,26 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
 import com.aistra.hail.R
 import com.aistra.hail.app.HailData
 import com.aistra.hail.databinding.ActivityMainBinding
 import com.aistra.hail.extensions.*
+import com.aistra.hail.ui.home.HomeFragment
 import com.aistra.hail.utils.HPolicy
 import com.aistra.hail.utils.HUI
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.navigation.NavigationBarView
 
 class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedListener {
     lateinit var fab: ExtendedFloatingActionButton
-    lateinit var fabWhitelist: FloatingActionButton
-    lateinit var fabHome: FloatingActionButton
-    lateinit var fabSearch: FloatingActionButton
     lateinit var fabContainer: LinearLayout
     lateinit var appbar: AppBarLayout
+    private lateinit var navController: NavController
+    private lateinit var navHostFragment: NavHostFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,21 +70,32 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         setContentView(root)
         setSupportActionBar(appBarMain.toolbar)
         fab = appBarMain.fab
-        fabWhitelist = appBarMain.fabWhitelist!!
-        fabHome = appBarMain.fabHome!!
-        fabSearch = appBarMain.fabSearch!!
         fabContainer = appBarMain.fabContainer!!
         appbar = appBarMain.appBarLayout
 
-        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
-        val navController = navHostFragment.navController
+        navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
+        navController = navHostFragment.navController
         navController.addOnDestinationChangedListener(this@MainActivity)
         val appBarConfiguration = AppBarConfiguration.Builder(
             R.id.nav_home, R.id.nav_apps, R.id.nav_settings, R.id.nav_about
         ).build()
         setupActionBarWithNavController(navController, appBarConfiguration)
-        bottomNav?.setupWithNavController(navController)
-        navRail?.setupWithNavController(navController)
+
+        val navListener = NavigationBarView.OnItemSelectedListener { item ->
+            if (item.itemId == R.id.nav_search) {
+                openHomeSearch()
+                false
+            } else {
+                NavigationUI.onNavDestinationSelected(item, navController)
+            }
+        }
+        bottomNav?.setOnItemSelectedListener(navListener)
+        navRail?.setOnItemSelectedListener(navListener)
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            val id = destination.id
+            bottomNav?.menu?.findItem(id)?.isChecked = true
+            navRail?.menu?.findItem(id)?.isChecked = true
+        }
 
         val isRtl = isRtl
         val isLandscape = isLandscape
@@ -94,6 +105,26 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         bottomNav?.applyDefaultInsetter { paddingRelative(isRtl, start = true, end = true, bottom = true) }
         navRail?.applyDefaultInsetter { paddingRelative(isRtl, start = true, top = true, bottom = true) }
         appBarMain.fabContainer!!.applyDefaultInsetter { marginRelative(isRtl, end = true, bottom = isLandscape) }
+    }
+
+    fun openHomeSearch() {
+        if (navController.currentDestination?.id != R.id.nav_home) {
+            navController.navigate(R.id.nav_home)
+        }
+        fab.post {
+            (navHostFragment.childFragmentManager.primaryNavigationFragment as? HomeFragment)
+                ?.expandSearch()
+        }
+    }
+
+    fun goHomeTab() {
+        if (navController.currentDestination?.id != R.id.nav_home) {
+            navController.navigate(R.id.nav_home)
+        }
+        fab.post {
+            (navHostFragment.childFragmentManager.primaryNavigationFragment as? HomeFragment)
+                ?.goToDefaultTag()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -109,25 +140,10 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
             }.setNegativeButton(android.R.string.cancel, null).show()
     }
 
-    /* override fun onStop() {
-        super.onStop()
-        if (HailData.biometricLogin) finishAndRemoveTask()
-    } */
-
     override fun onDestinationChanged(
         controller: NavController, destination: NavDestination, arguments: Bundle?
     ) {
         fab.tag = destination.id == R.id.nav_home
-        if (fab.tag == true) {
-            fab.show()
-            fabWhitelist.show()
-            fabHome.show()
-            fabSearch.show()
-        } else {
-            fab.hide()
-            fabWhitelist.hide()
-            fabHome.hide()
-            fabSearch.hide()
-        }
+        if (fab.tag == true) fab.show() else fab.hide()
     }
 }

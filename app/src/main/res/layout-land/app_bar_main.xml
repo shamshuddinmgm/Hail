@@ -25,7 +25,6 @@
         android:id="@+id/content_main"
         layout="@layout/content_main" />
 
-    <!-- FAB row: home mini FAB, whitelist mini FAB, freeze FAB -->
     <LinearLayout
         android:id="@+id/fab_container"
         android:layout_width="wrap_content"
@@ -37,39 +36,20 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_home"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:contentDescription="@string/title_home"
-            app:fabSize="mini"
-            app:srcCompat="@drawable/ic_outline_home" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_whitelist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:contentDescription="@string/whitelisted_apps"
-            app:fabSize="mini"
-            app:srcCompat="@drawable/ic_outline_lock" />
-
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/action_freeze_current"
-            app:icon="@drawable/ic_round_frozen" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_pin_shortcuts"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:contentDescription="@string/home_shortcuts"
-            app:fabSize="mini"
-            app:srcCompat="@drawable/ic_outline_add_to_home" />
+            android:contentDescription="@string/action_freeze"
+            android:text="@string/action_freeze"
+            app:backgroundTint="?attr/colorPrimaryContainer"
+            app:elevation="6dp"
+            app:icon="@drawable/ic_round_frozen"
+            app:iconTint="?attr/colorOnPrimaryContainer"
+            app:rippleColor="?attr/colorPrimary"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Hail.Fab"
+            app:strokeColor="?attr/colorOutlineVariant"
+            app:strokeWidth="1dp" />
 
     </LinearLayout>
 

@@ -21,7 +21,6 @@ class PagerAdapter(
     private val selectedList: List<AppInfo>,
     private val flags: MutableMap<String, Int> = mutableMapOf()
 ) : ListAdapter<AppInfo, PagerAdapter.ViewHolder>(HomeDiff(selectedList, flags)) {
-    private var loadIconJob: Job? = null
     lateinit var onItemClickListener: OnItemClickListener
     lateinit var onItemLongClickListener: OnItemLongClickListener
 
@@ -32,12 +31,13 @@ class PagerAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val info = currentList[position]
         flags[info.packageName] = info.getFlag(selectedList)
+        holder.loadIconJob?.cancel()
         holder.itemView.run {
             setOnClickListener { onItemClickListener.onItemClick(info) }
             setOnLongClickListener { onItemLongClickListener.onItemLongClick(info) }
             findViewById<ImageView>(R.id.app_icon).run {
                 info.applicationInfo?.let {
-                    loadIconJob = AppIconCache.loadIconBitmapAsync(
+                    holder.loadIconJob = AppIconCache.loadIconBitmapAsync(
                         context,
                         it,
                         myUserId,
@@ -72,20 +72,34 @@ class PagerAdapter(
         }
     }
 
-    fun onDestroy() {
-        if (loadIconJob?.isActive == true) loadIconJob?.cancel()
+    override fun onViewRecycled(holder: ViewHolder) {
+        holder.loadIconJob?.cancel()
+        holder.loadIconJob = null
+        super.onViewRecycled(holder)
     }
+
+    fun onDestroy() {
+        // no-op: jobs cancelled per ViewHolder
+    }
+
+    /** Clear cached DiffUtil flags so freeze/unfreeze always rebinds visible icons. */
+    fun invalidateContentFlags() = flags.clear()
 
     private class HomeDiff(
         private val selectedList: List<AppInfo>, private val flags: Map<String, Int>
     ) : DiffUtil.ItemCallback<AppInfo>() {
         override fun areItemsTheSame(oldItem: AppInfo, newItem: AppInfo): Boolean = oldItem == newItem
 
-        override fun areContentsTheSame(oldItem: AppInfo, newItem: AppInfo): Boolean =
-            flags[oldItem.packageName] == newItem.getFlag(selectedList)
+        override fun areContentsTheSame(oldItem: AppInfo, newItem: AppInfo): Boolean {
+            val cached = flags[oldItem.packageName]
+            val fresh = newItem.getFlag(selectedList)
+            return cached != null && cached == fresh
+        }
     }
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view)
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        var loadIconJob: Job? = null
+    }
 
     interface OnItemClickListener {
         fun onItemClick(info: AppInfo)

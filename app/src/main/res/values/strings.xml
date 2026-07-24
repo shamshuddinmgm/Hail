@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Hail</string>
+    <string name="app_name">Hail+</string>
     <string name="app_slogan">Freezedom!</string>
     <string name="title_home">Home</string>
     <string name="title_apps">Apps</string>
@@ -25,6 +25,13 @@
     <string name="action_lock_freeze">Lock &amp; Freeze</string>
     <string name="action_launch">Launch</string>
     <string name="action_freeze">Freeze</string>
+    <string name="action_freeze_mode">Freeze · %1$s</string>
+    <string name="mode_short_disable">Dis</string>
+    <string name="mode_short_suspend">Sus</string>
+    <string name="mode_short_hide">Hide</string>
+    <string name="mode_short_stop">Stop</string>
+    <string name="mode_short_idle">Idle</string>
+    <string name="mode_short_global">Glob</string>
     <string name="action_unfreeze">Unfreeze</string>
     <string name="action_deferred_task">Deferred task</string>
     <string name="action_tag_add">Add tag</string>

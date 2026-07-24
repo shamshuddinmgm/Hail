@@ -95,14 +95,21 @@ class HomeFragment : MainFragment() {
             }
         })
 
-        activity.fabHome.setOnClickListener { binding.pager.setCurrentItem(0, false) }
-
         // Pre-warm the icon cache for all checked apps so switching tag categories
         // shows icons instantly instead of waiting for them to load on demand.
         val appsToPreload = HailData.checkedList.mapNotNull { it.applicationInfo }
         AppIconCache.preloadIconsAsync(requireContext().applicationContext, appsToPreload, myUserId)
 
         return binding.root
+    }
+
+    fun goToDefaultTag() {
+        binding.pager.setCurrentItem(0, false)
+    }
+
+    fun expandSearch() {
+        val pos = binding.pager.currentItem
+        (childFragmentManager.findFragmentByTag("f$pos") as? PagerFragment)?.expandSearch()
     }
 
     fun showPinShortcutsDialog() {
