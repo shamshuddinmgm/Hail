@@ -2,6 +2,21 @@
 
 # Hail 雹
 
+This build is based on [chaoscreater/Hail](https://github.com/chaoscreater/Hail) (itself based on [aistra0528/Hail](https://github.com/aistra0528/Hail)).
+
+## What's new in this build (v1.11.0)
+
+In addition to chaoscreater enhancements:
+
+1. **Per-tag working modes** — Settings → Tag working modes, or long-press a tag on Home. Each tag (e.g. MyApps) can use Disable, Suspend, etc. independently. Freeze on that tab uses the tag preset. Unfreeze remembers the mode used per app.
+2. **Search FAB** — Search sits beside Freeze (bottom right). Home shortcuts moved to the toolbar.
+3. **Smoother Home** — Capped ViewPager offscreen pages; freeze/unfreeze runs off the UI thread.
+4. Light Material polish on FABs (light and dark themes).
+
+Install note: package id remains `com.aistra.hail`. Export settings before replacing another Hail build signed with a different key.
+
+---
+
 [![Android CI status](https://github.com/aistra0528/Hail/workflows/Android%20CI/badge.svg)](https://github.com/aistra0528/Hail/actions)
 [![Translation status](https://hosted.weblate.org/widgets/hail/-/svg-badge.svg)](https://hosted.weblate.org/engage/hail/)
 [![Downloads](https://img.shields.io/github/downloads/aistra0528/Hail/total.svg)](https://github.com/aistra0528/Hail/releases)

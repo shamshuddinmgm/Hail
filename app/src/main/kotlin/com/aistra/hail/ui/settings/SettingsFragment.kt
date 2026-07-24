@@ -110,6 +110,13 @@ class SettingsFragment : MainFragment(), MenuProvider {
                 icon = Icons.Outlined.Adb,
                 type = ListPreferenceType.ALERT_DIALOG
             )
+            preference(
+                key = "tag_working_modes",
+                title = { Text(text = stringResource(R.string.tag_working_modes)) },
+                summary = { Text(text = stringResource(R.string.tag_working_modes_summary)) },
+                icon = { Icon(imageVector = Icons.Outlined.Label, contentDescription = null) },
+                onClick = { showTagWorkingModesDialog() }
+            )
             switchPreference(
                 key = HailData.BIOMETRIC_LOGIN,
                 defaultValue = false,
@@ -418,8 +425,8 @@ class SettingsFragment : MainFragment(), MenuProvider {
             .setItems(R.array.pin_shortcut_entries) { _, which ->
                 when (which) {
                     0 -> MaterialAlertDialogBuilder(requireActivity()).setTitle(R.string.action_freeze_tag)
-                        .setItems(HailData.tags.map { it.first }.toTypedArray()) { _, index ->
-                            val tag = HailData.tags[index].first
+                        .setItems(HailData.tags.map { it.name }.toTypedArray()) { _, index ->
+                            val tag = HailData.tags[index].name
                             HShortcuts.addPinShortcut(
                                 AppCompatResources.getDrawable(
                                     requireContext(), R.drawable.ic_round_frozen_shortcut
@@ -431,8 +438,8 @@ class SettingsFragment : MainFragment(), MenuProvider {
                         }.setNegativeButton(android.R.string.cancel, null).show()
 
                     1 -> MaterialAlertDialogBuilder(requireActivity()).setTitle(R.string.action_unfreeze_tag)
-                        .setItems(HailData.tags.map { it.first }.toTypedArray()) { _, index ->
-                            val tag = HailData.tags[index].first
+                        .setItems(HailData.tags.map { it.name }.toTypedArray()) { _, index ->
+                            val tag = HailData.tags[index].name
                             HShortcuts.addPinShortcut(
                                 AppCompatResources.getDrawable(
                                     requireContext(), R.drawable.ic_round_unfrozen_shortcut
@@ -894,8 +901,60 @@ class SettingsFragment : MainFragment(), MenuProvider {
             .show()
     }
 
+    private fun showTagWorkingModesDialog() {
+        if (HailData.tags.isEmpty()) {
+            HUI.showToast(R.string.msg_no_tags_to_reorder)
+            return
+        }
+        val items = Array(HailData.tags.size) { i ->
+            val tag = HailData.tags[i]
+            "${tag.name}\n${HailData.workingModeDisplayName(tag.workingMode)}"
+        }
+        MaterialAlertDialogBuilder(requireActivity())
+            .setTitle(R.string.tag_working_modes)
+            .setItems(items) { _, index ->
+                showTagModePicker(HailData.tags[index])
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showTagModePicker(tag: com.aistra.hail.app.TagInfo) {
+        val values = listOf("") + HailData.WORKING_MODE_VALUES
+        val entries = listOf(getString(R.string.tag_mode_use_global)) +
+                resources.getStringArray(R.array.working_mode_entries).toList()
+        val checked = values.indexOf(tag.workingMode ?: "").coerceAtLeast(0)
+        MaterialAlertDialogBuilder(requireActivity())
+            .setTitle(getString(R.string.tag_working_mode_for, tag.name))
+            .setSingleChoiceItems(entries.toTypedArray(), checked) { dialog, which ->
+                val selected = values[which].ifEmpty { null }
+                if (selected == HailData.MODE_SHIZUKU_HIDE) {
+                    runCatching { HShizuku.isRoot }.onSuccess {
+                        if (!it) {
+                            MaterialAlertDialogBuilder(requireActivity())
+                                .setMessage(R.string.shizuku_hide_adb)
+                                .setPositiveButton(android.R.string.ok, null)
+                                .show()
+                            return@setSingleChoiceItems
+                        }
+                    }
+                }
+                HailData.setTagWorkingMode(tag.id, selected)
+                dialog.dismiss()
+                HUI.showToast(
+                    getString(
+                        R.string.msg_tag_mode_set,
+                        tag.name,
+                        HailData.workingModeDisplayName(selected)
+                    )
+                )
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     @Composable
-    private fun ReorderTagsList(tags: SnapshotStateList<Pair<String, Int>>) {
+    private fun ReorderTagsList(tags: SnapshotStateList<com.aistra.hail.app.TagInfo>) {
         val listState = rememberLazyListState()
         var draggedIndex by remember { mutableIntStateOf(-1) }
         var dragOffsetY by remember { mutableFloatStateOf(0f) }
@@ -962,7 +1021,7 @@ class SettingsFragment : MainFragment(), MenuProvider {
                                 modifier = Modifier.padding(end = 16.dp)
                             )
                             Text(
-                                text = tag.first,
+                                text = tag.name,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface
                             )

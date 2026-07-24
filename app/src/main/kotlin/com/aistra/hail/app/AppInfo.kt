@@ -12,7 +12,9 @@ class AppInfo(
     var addToHomeScreen: Boolean = false,
     var prereqPackage: String? = null,
     var prereqLaunch: Boolean = false,
-    var prereqEnable: Boolean = false
+    var prereqEnable: Boolean = false,
+    /** Working mode used when this app was last frozen; required for correct unfreeze. */
+    var frozenMode: String? = null
 ) {
     enum class State { NOT_FOUND, UNFROZEN, FROZEN }
 
@@ -21,7 +23,7 @@ class AppInfo(
     val state
         get() = when {
             applicationInfo == null -> State.NOT_FOUND
-            AppManager.isAppFrozen(packageName) -> State.FROZEN
+            AppManager.isAppFrozen(packageName, frozenMode) -> State.FROZEN
             else -> State.UNFROZEN
         }
 

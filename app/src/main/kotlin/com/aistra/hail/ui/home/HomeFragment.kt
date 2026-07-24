@@ -57,9 +57,9 @@ class HomeFragment : MainFragment() {
         binding.pager.adapter = HomeAdapter(this)
         // Keep all tag fragments alive so revisiting a tab requires no RecyclerView
         // rebind — DiffUtil sees no changes and the icons render from existing views instantly.
-        binding.pager.offscreenPageLimit = tags.size.coerceAtLeast(1)
+        binding.pager.offscreenPageLimit = 2
         TabLayoutMediator(binding.tabs, binding.pager) { tab, position ->
-            tab.text = tags[position].first
+            tab.text = tags[position].name
         }.attach()
         binding.tabs.applyDefaultInsetter { paddingRelative(isRtl, start = !activity.isLandscape, end = true) }
 
@@ -96,7 +96,6 @@ class HomeFragment : MainFragment() {
         })
 
         activity.fabHome.setOnClickListener { binding.pager.setCurrentItem(0, false) }
-        activity.fabPinShortcuts.setOnClickListener { showPinShortcutsDialog() }
 
         // Pre-warm the icon cache for all checked apps so switching tag categories
         // shows icons instantly instead of waiting for them to load on demand.
@@ -106,7 +105,7 @@ class HomeFragment : MainFragment() {
         return binding.root
     }
 
-    private fun showPinShortcutsDialog() {
+    fun showPinShortcutsDialog() {
         val allApps = HailData.checkedList
             .filter { it.applicationInfo != null }
             .sortedWith(NameComparator)

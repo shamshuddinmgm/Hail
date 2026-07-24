@@ -32,6 +32,7 @@ object HailData {
     private const val KEY_ADD_TO_HOME_SCREEN = "add_to_home_screen"
     const val KEY_PACKAGE = "package"
     const val KEY_FROZEN = "frozen"
+    const val KEY_FROZEN_MODE = "frozen_mode"
     const val KEY_PREREQ_PACKAGE = "prereq_package"
     const val KEY_PREREQ_LAUNCH = "prereq_launch"
     const val KEY_PREREQ_ENABLE = "prereq_enable"
@@ -218,7 +219,8 @@ object HailData {
                             addToHomeScreen = optBoolean(KEY_ADD_TO_HOME_SCREEN),
                             prereqPackage = optString(KEY_PREREQ_PACKAGE).ifEmpty { null },
                             prereqLaunch = optBoolean(KEY_PREREQ_LAUNCH),
-                            prereqEnable = optBoolean(KEY_PREREQ_ENABLE)
+                            prereqEnable = optBoolean(KEY_PREREQ_ENABLE),
+                            frozenMode = optString(KEY_FROZEN_MODE).ifEmpty { null }
                         )
                     })
                 }
@@ -252,21 +254,28 @@ object HailData {
                         .put(KEY_PREREQ_PACKAGE, it.prereqPackage ?: "")
                         .put(KEY_PREREQ_LAUNCH, it.prereqLaunch)
                         .put(KEY_PREREQ_ENABLE, it.prereqEnable)
+                        .put(KEY_FROZEN_MODE, it.frozenMode ?: "")
                 )
             }
             toString()
         })
     }
 
-    val tags: MutableList<Pair<String, Int>> by lazy {
-        mutableListOf<Pair<String, Int>>().apply {
+    val tags: MutableList<TagInfo> by lazy {
+        mutableListOf<TagInfo>().apply {
             runCatching {
                 val json = JSONArray(HFiles.read(tagsPath))
                 for (i in 0 until json.length()) {
-                    add(with(json.getJSONObject(i)) { getString(KEY_TAG) to getInt(KEY_ID) })
+                    add(with(json.getJSONObject(i)) {
+                        TagInfo(
+                            name = getString(KEY_TAG),
+                            id = getInt(KEY_ID),
+                            workingMode = optString(WORKING_MODE).ifEmpty { null }
+                        )
+                    })
                 }
             }.onFailure {
-                add(app.getString(R.string.label_default) to 0)
+                add(TagInfo(app.getString(R.string.label_default), 0))
             }
         }
     }
@@ -275,10 +284,47 @@ object HailData {
         if (!HFiles.exists(dir)) HFiles.createDirectories(dir)
         HFiles.write(tagsPath, JSONArray().run {
             tags.forEach {
-                put(JSONObject().put(KEY_TAG, it.first).put(KEY_ID, it.second))
+                put(
+                    JSONObject()
+                        .put(KEY_TAG, it.name)
+                        .put(KEY_ID, it.id)
+                        .put(WORKING_MODE, it.workingMode ?: "")
+                )
             }
             toString()
         })
+    }
+
+    fun tagById(tagId: Int): TagInfo? = tags.find { it.id == tagId }
+
+    fun setTagWorkingMode(tagId: Int, mode: String?) {
+        tagById(tagId)?.workingMode = mode?.takeIf { it.isNotEmpty() }
+        saveTags()
+    }
+
+    /** Mode used when freezing apps on a specific tag tab (FAB / freeze visible). */
+    fun workingModeForTag(tagId: Int): String =
+        tagById(tagId)?.resolvedWorkingMode() ?: workingMode
+
+    /**
+     * Mode for an app when freeze-all / multi-tag actions run.
+     * Prefers [preferredTagId], then the first tag with a custom preset, else global.
+     */
+    fun workingModeForApp(appInfo: AppInfo, preferredTagId: Int? = null): String {
+        preferredTagId?.let { id ->
+            tagById(id)?.workingMode?.takeIf { it.isNotEmpty() }?.let { return it }
+        }
+        for (id in appInfo.tagIdList) {
+            tagById(id)?.workingMode?.takeIf { it.isNotEmpty() }?.let { return it }
+        }
+        return workingMode
+    }
+
+    fun workingModeDisplayName(mode: String?): String {
+        if (mode.isNullOrEmpty()) return app.getString(R.string.tag_mode_use_global)
+        val index = WORKING_MODE_VALUES.indexOf(mode)
+        val entries = app.resources.getStringArray(R.array.working_mode_entries)
+        return if (index in entries.indices) entries[index] else mode
     }
 
     fun changeAppsSort(sort: String) = sp.edit { putString(SORT_BY, sort) }

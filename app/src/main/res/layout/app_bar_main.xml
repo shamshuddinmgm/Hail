@@ -59,16 +59,19 @@
             android:id="@+id/fab"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:contentDescription="@string/action_freeze"
+            app:elevation="6dp"
             app:icon="@drawable/ic_round_frozen" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_pin_shortcuts"
+            android:id="@+id/fab_search"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
-            android:contentDescription="@string/home_shortcuts"
+            android:contentDescription="@string/action_search"
+            app:elevation="4dp"
             app:fabSize="mini"
-            app:srcCompat="@drawable/ic_outline_add_to_home" />
+            app:srcCompat="@drawable/ic_outline_search" />
 
     </LinearLayout>
 

@@ -2,8 +2,19 @@
 
 # 雹 Hail
 
-# What's new in my version?
-My version has a couple of new features that the current Hail (v1.10.0) doesn't have. All these changes are made by Claude and I just reviewed the code (mostly) and approved them.
+基于 [chaoscreater/Hail](https://github.com/chaoscreater/Hail)（上游 [aistra0528/Hail](https://github.com/aistra0528/Hail)）。
+
+## 本构建新增 (v1.11.0)
+
+1. **按标签工作模式** — 设置 → Tag working modes，或长按首页标签。每个标签可单独选择停用/暂停等；该标签页冻结按钮使用对应预设；解冻按应用记录的模式还原。
+2. **搜索悬浮按钮** — 搜索移至冻结按钮旁；添加到桌面快捷方式移至顶栏。
+3. **流畅度** — 限制 ViewPager 预加载页数；冻结/解冻在后台线程执行。
+4. FAB 轻微 Material 抛光（浅色/深色）。
+
+安装说明：包名仍为 `com.aistra.hail`。若替换其他签名的 Hail，请先导出设置。
+
+# What's new (from chaoscreater base)
+The base fork includes features beyond stock Hail (v1.10.0), such as:
 
 1. Tags can now be manually reorganized, i.e their position can be changed. Go to Settings page to do this.
 2. Tags now have a longer character limit

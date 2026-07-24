@@ -38,16 +38,18 @@ object SettingsBackupManager {
             obj.put(HailData.KEY_PREREQ_PACKAGE, appInfo.prereqPackage ?: "")
             obj.put(HailData.KEY_PREREQ_LAUNCH, appInfo.prereqLaunch)
             obj.put(HailData.KEY_PREREQ_ENABLE, appInfo.prereqEnable)
+            obj.put(HailData.KEY_FROZEN_MODE, appInfo.frozenMode ?: "")
             appsArray.put(obj)
         }
         root.put(KEY_APPS, appsArray)
 
         // --- Tags (order preserved — list maintains insertion order) ---
         val tagsArray = JSONArray()
-        HailData.tags.forEach { (name, id) ->
+        HailData.tags.forEach { tag ->
             val obj = JSONObject()
-            obj.put(HailData.KEY_TAG, name)
-            obj.put("id", id)
+            obj.put(HailData.KEY_TAG, tag.name)
+            obj.put("id", tag.id)
+            obj.put(HailData.WORKING_MODE, tag.workingMode ?: "")
             tagsArray.put(obj)
         }
         root.put(KEY_TAGS, tagsArray)
@@ -131,7 +133,7 @@ object SettingsBackupManager {
                 val obj = tagsArray.getJSONObject(i)
                 val name = obj.getString(HailData.KEY_TAG)
                 val id = obj.getInt("id")
-                HailData.tags.add(name to id)
+                HailData.tags.add(com.aistra.hail.app.TagInfo(name, id, obj.optString(HailData.WORKING_MODE).ifEmpty { null }))
             }
             HailData.saveTags()
         }
@@ -155,6 +157,7 @@ object SettingsBackupManager {
                 val prereqPackage = obj.optString(HailData.KEY_PREREQ_PACKAGE).ifEmpty { null }
                 val prereqLaunch = obj.optBoolean(HailData.KEY_PREREQ_LAUNCH, false)
                 val prereqEnable = obj.optBoolean(HailData.KEY_PREREQ_ENABLE, false)
+                val frozenMode = obj.optString(HailData.KEY_FROZEN_MODE).ifEmpty { null }
                 HailData.checkedList.add(
                     com.aistra.hail.app.AppInfo(
                         packageName = packageName,
@@ -164,7 +167,8 @@ object SettingsBackupManager {
                         addToHomeScreen = addToHomeScreen,
                         prereqPackage = prereqPackage,
                         prereqLaunch = prereqLaunch,
-                        prereqEnable = prereqEnable
+                        prereqEnable = prereqEnable,
+                        frozenMode = frozenMode
                     )
                 )
             }

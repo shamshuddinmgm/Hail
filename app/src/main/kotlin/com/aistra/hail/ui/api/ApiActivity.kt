@@ -67,12 +67,17 @@ class ApiActivity : ComponentActivity() {
             HailApi.ACTION_FREEZE -> setAppFrozen(requirePackage, true)
             HailApi.ACTION_UNFREEZE -> setAppFrozen(requirePackage, false)
             HailApi.ACTION_FREEZE_TAG -> setListFrozen(
-                true, HailData.checkedList.filter { requireTagId in it.tagIdList }, true
+                true,
+                HailData.checkedList.filter { requireTagId in it.tagIdList },
+                skipWhitelisted = true,
+                preferredTagId = requireTagId
             )
 
             HailApi.ACTION_UNFREEZE_TAG -> setListFrozen(
-                false, HailData.checkedList.filter { requireTagId in it.tagIdList })
-
+                false,
+                HailData.checkedList.filter { requireTagId in it.tagIdList },
+                preferredTagId = requireTagId
+            )
             HailApi.ACTION_FREEZE_ALL -> setListFrozen(true)
             HailApi.ACTION_UNFREEZE_ALL -> setListFrozen(false)
             HailApi.ACTION_FREEZE_NON_WHITELISTED -> setListFrozen(true, skipWhitelisted = true)
@@ -239,14 +244,24 @@ class ApiActivity : ComponentActivity() {
             if (action == Intent.ACTION_VIEW) data?.getQueryParameter(HailData.KEY_TAG)
             else getStringExtra(HailData.KEY_TAG)
         }?.let {
-            HailData.tags.find { tag -> tag.first == it }?.second
+            HailData.tags.find { tag -> tag.name == it }?.id
                 ?: throw IllegalStateException("Tag unavailable:\n$it")
         } ?: throw IllegalArgumentException("Tag must not be null")
 
     private fun launchApp(pkg: String, tagId: Int? = null) {
         handlePrerequisiteApp(pkg)
-        if (tagId != null) setListFrozen(false, HailData.checkedList.filter { tagId in it.tagIdList })
-        if (AppManager.isAppFrozen(pkg) && AppManager.setAppFrozen(pkg, false)) {
+        if (tagId != null) setListFrozen(
+            false,
+            HailData.checkedList.filter { tagId in it.tagIdList },
+            preferredTagId = tagId
+        )
+        val info = HailData.checkedList.find { it.packageName == pkg }
+        val mode = info?.frozenMode?.takeIf { it.isNotEmpty() }
+            ?: info?.let { HailData.workingModeForApp(it, tagId) }
+            ?: HailData.workingMode
+        if (AppManager.isAppFrozen(pkg, info?.frozenMode ?: mode) && AppManager.setAppFrozen(pkg, false, mode)) {
+            info?.frozenMode = null
+            HailData.saveApps()
             app.setAutoFreezeService()
         }
         packageManager.getLaunchIntentForPackage(pkg)?.let {
@@ -257,17 +272,23 @@ class ApiActivity : ComponentActivity() {
             // the app is still frozen). Fire the automation signal before surfacing the error
             // so MacroDroid can start Shizuku.
             HUI.notifyShizukuRequired(pkg)
-            throw ActivityNotFoundException(getString(R.string.activity_not_found))
+            throw IllegalStateException(getString(R.string.activity_not_found))
         }
     }
 
     private fun handlePrerequisiteApp(pkg: String) {
         val appInfo = HailData.checkedList.find { it.packageName == pkg } ?: return
         val prereqPkg = appInfo.prereqPackage ?: return
+        val prereqInfo = HailData.checkedList.find { it.packageName == prereqPkg }
 
         // Unfreeze the prerequisite app if it's frozen and either launch or enable is requested
-        if ((appInfo.prereqLaunch || appInfo.prereqEnable) && AppManager.isAppFrozen(prereqPkg)) {
-            if (AppManager.setAppFrozen(prereqPkg, false)) {
+        if ((appInfo.prereqLaunch || appInfo.prereqEnable) && AppManager.isAppFrozen(prereqPkg, prereqInfo?.frozenMode)) {
+            val mode = prereqInfo?.frozenMode?.takeIf { it.isNotEmpty() }
+                ?: prereqInfo?.let { HailData.workingModeForApp(it) }
+                ?: HailData.workingMode
+            if (AppManager.setAppFrozen(prereqPkg, false, mode)) {
+                prereqInfo?.frozenMode = null
+                HailData.saveApps()
                 app.setAutoFreezeService()
             }
         }
@@ -277,27 +298,65 @@ class ApiActivity : ComponentActivity() {
         }
     }
 
-    private fun setAppFrozen(pkg: String, frozen: Boolean) = when {
-        frozen && !HailData.isChecked(pkg) -> throw SecurityException("Package not checked: $pkg")
-        AppManager.isAppFrozen(pkg) != frozen && !AppManager.setAppFrozen(
-            pkg, frozen
-        ) -> throw IllegalStateException(getString(R.string.permission_denied_pkg, pkg))
-
-        else -> {
-            HUI.showToast(
-                if (frozen) R.string.msg_freeze else R.string.msg_unfreeze,
-                HPackages.getApplicationInfoOrNull(pkg)?.loadLabel(packageManager) ?: pkg
-            )
-            app.setAutoFreezeService()
+    private fun setAppFrozen(pkg: String, frozen: Boolean, preferredTagId: Int? = null) {
+        val info = HailData.checkedList.find { it.packageName == pkg }
+        when {
+            frozen && info == null -> throw SecurityException("Package not checked: $pkg")
+            else -> {
+                val mode = if (frozen) {
+                    HailData.workingModeForApp(
+                        info ?: throw SecurityException("Package not checked: $pkg"),
+                        preferredTagId
+                    )
+                } else {
+                    info?.frozenMode?.takeIf { it.isNotEmpty() }
+                        ?: HailData.workingModeForApp(
+                            info ?: AppInfo(pkg),
+                            preferredTagId
+                        )
+                }
+                if (AppManager.isAppFrozen(pkg, if (frozen) mode else info?.frozenMode ?: mode) != frozen) {
+                    if (!AppManager.setAppFrozen(pkg, frozen, mode)) {
+                        throw IllegalStateException(getString(R.string.permission_denied_pkg, pkg))
+                    }
+                    if (info != null) {
+                        info.frozenMode = if (frozen) mode else null
+                        HailData.saveApps()
+                    }
+                }
+                HUI.showToast(
+                    if (frozen) R.string.msg_freeze else R.string.msg_unfreeze,
+                    HPackages.getApplicationInfoOrNull(pkg)?.loadLabel(packageManager) ?: pkg
+                )
+                app.setAutoFreezeService()
+            }
         }
     }
 
     private fun setListFrozen(
-        frozen: Boolean, list: List<AppInfo> = HailData.checkedList, skipWhitelisted: Boolean = false
+        frozen: Boolean,
+        list: List<AppInfo> = HailData.checkedList,
+        skipWhitelisted: Boolean = false,
+        preferredTagId: Int? = null
     ) {
-        val filtered =
-            list.filter { AppManager.isAppFrozen(it.packageName) != frozen && !(skipWhitelisted && it.whitelisted) }
-        when (val result = AppManager.setListFrozen(frozen, *filtered.toTypedArray())) {
+        val appsWithModes = list
+            .filter { !(skipWhitelisted && it.whitelisted) }
+            .map { info ->
+                val mode = if (frozen) {
+                    HailData.workingModeForApp(info, preferredTagId)
+                } else {
+                    info.frozenMode?.takeIf { it.isNotEmpty() }
+                        ?: HailData.workingModeForApp(info, preferredTagId)
+                }
+                info to mode
+            }
+            .filter { (info, mode) ->
+                AppManager.isAppFrozen(
+                    info.packageName,
+                    if (frozen) mode else info.frozenMode ?: mode
+                ) != frozen
+            }
+        when (val result = AppManager.setListFrozen(frozen, appsWithModes)) {
             null -> throw IllegalStateException(
                 getString(R.string.permission_denied_pkg, AppManager.lastDeniedPackage ?: "")
             )
