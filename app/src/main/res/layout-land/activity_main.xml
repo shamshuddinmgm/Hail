@@ -17,6 +17,7 @@
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:background="?attr/colorSurfaceContainer"
+        app:itemIconSize="@dimen/bottom_nav_icon_size"
         app:itemIconTint="@color/nav_item_tint"
         app:itemTextColor="@color/nav_item_tint"
         app:labelVisibilityMode="labeled"

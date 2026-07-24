@@ -28,6 +28,7 @@ object HailData {
     const val KEY_TAG = "tag"
     private const val KEY_TAGS = "tags"
     private const val KEY_PINNED = "pinned"
+    const val KEY_PIN_ORDER = "pin_order"
     private const val KEY_WHITELISTED = "whitelisted"
     private const val KEY_ADD_TO_HOME_SCREEN = "add_to_home_screen"
     const val KEY_PACKAGE = "package"
@@ -234,6 +235,7 @@ object HailData {
                         AppInfo(
                             packageName = getString(KEY_PACKAGE),
                             pinned = optBoolean(KEY_PINNED),
+                            pinOrder = optInt(KEY_PIN_ORDER, i),
                             whitelisted = optBoolean(KEY_WHITELISTED),
                             tagIdList = optJSONArray(KEY_TAGS)?.let {
                                 MutableList(it.length()) { index -> it.getInt(index) }
@@ -245,6 +247,11 @@ object HailData {
                             frozenMode = optString(KEY_FROZEN_MODE).ifEmpty { null }
                         )
                     })
+                }
+                // Legacy data may leave every pinned app at pinOrder 0 — assign stable ranks.
+                val pinned = filter { it.pinned }
+                if (pinned.size > 1 && pinned.map { it.pinOrder }.toSet().size < pinned.size) {
+                    pinned.forEachIndexed { index, app -> app.pinOrder = index }
                 }
             }
         }
@@ -270,6 +277,7 @@ object HailData {
                     JSONObject()
                         .put(KEY_PACKAGE, it.packageName)
                         .put(KEY_PINNED, it.pinned)
+                        .put(KEY_PIN_ORDER, it.pinOrder)
                         .put(KEY_WHITELISTED, it.whitelisted)
                         .put(KEY_TAGS, JSONArray(it.tagIdList))
                         .put(KEY_ADD_TO_HOME_SCREEN, it.addToHomeScreen)
@@ -382,4 +390,75 @@ object HailData {
     fun changeAppsSort(sort: String) = sp.edit { putString(SORT_BY, sort) }
 
     fun changeAppsFilter(filter: String, enabled: Boolean) = sp.edit { putBoolean(filter, enabled) }
+
+    /** Assign next pinOrder when pinning an app (append to end of pinned section). */
+    fun pinApp(info: AppInfo) {
+        if (info.pinned) return
+        info.pinned = true
+        info.pinOrder = (checkedList.filter { it.pinned && it !== info }.maxOfOrNull { it.pinOrder } ?: -1) + 1
+        saveApps()
+    }
+
+    fun unpinApp(info: AppInfo) {
+        if (!info.pinned) return
+        info.pinned = false
+        info.pinOrder = 0
+        renumberPinnedOrders(save = true)
+    }
+
+    fun togglePinned(info: AppInfo) {
+        if (info.pinned) unpinApp(info) else pinApp(info)
+    }
+
+    /** Renumber pinned apps 0..n-1 in current pinOrder. */
+    fun renumberPinnedOrders(save: Boolean = true) {
+        checkedList.filter { it.pinned }
+            .sortedBy { it.pinOrder }
+            .forEachIndexed { index, app -> app.pinOrder = index }
+        if (save) saveApps()
+    }
+
+    /**
+     * Move a pinned app within the pinned group.
+     * [delta] negative = toward front (top), positive = toward end.
+     * @return true if order changed
+     */
+    fun movePinned(info: AppInfo, delta: Int): Boolean {
+        if (!info.pinned || delta == 0) return false
+        val pinned = checkedList.filter { it.pinned }.sortedBy { it.pinOrder }.toMutableList()
+        val from = pinned.indexOfFirst { it.packageName == info.packageName }
+        if (from < 0) return false
+        val to = (from + delta).coerceIn(0, pinned.lastIndex)
+        if (from == to) return false
+        pinned.removeAt(from)
+        pinned.add(to, info)
+        pinned.forEachIndexed { index, app -> app.pinOrder = index }
+        saveApps()
+        return true
+    }
+
+    fun movePinnedToExtreme(info: AppInfo, toStart: Boolean): Boolean {
+        if (!info.pinned) return false
+        val pinned = checkedList.filter { it.pinned }.sortedBy { it.pinOrder }
+        val from = pinned.indexOfFirst { it.packageName == info.packageName }
+        if (from < 0) return false
+        val target = if (toStart) 0 else pinned.lastIndex
+        if (from == target) return false
+        return movePinned(info, target - from)
+    }
+
+    /**
+     * Reorder after a drag among the currently visible pinned subset.
+     * [orderedPinned] is the new front-to-back order of pinned apps on this page.
+     */
+    fun applyPinnedOrder(orderedPinned: List<AppInfo>) {
+        if (orderedPinned.isEmpty()) return
+        val remaining = checkedList.filter { it.pinned && it !in orderedPinned }
+            .sortedBy { it.pinOrder }
+        (orderedPinned + remaining).forEachIndexed { index, app ->
+            app.pinned = true
+            app.pinOrder = index
+        }
+        saveApps()
+    }
 }

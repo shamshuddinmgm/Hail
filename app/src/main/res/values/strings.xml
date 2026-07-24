@@ -156,6 +156,12 @@
     <string name="msg_biometric">Login using your biometric credential</string>
     <string name="action_pin">Pin</string>
     <string name="action_unpin">Unpin</string>
+    <string name="action_pin_move_top">Move pinned to top</string>
+    <string name="action_pin_move_up">Move pinned up</string>
+    <string name="action_pin_move_down">Move pinned down</string>
+    <string name="action_pin_move_bottom">Move pinned to end</string>
+    <string name="action_pin_drag">Drag to reorder</string>
+    <string name="msg_pin_drag">Drag this icon among pinned apps, then release</string>
     <string name="action_whitelist">Add to Whitelist</string>
     <string name="action_remove_whitelist">Remove from Whitelist</string>
     <string name="nothing_here">Nothing here</string>

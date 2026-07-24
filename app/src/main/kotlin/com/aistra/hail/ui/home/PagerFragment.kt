@@ -35,6 +35,7 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.aistra.hail.HailApp.Companion.app
 import com.aistra.hail.R
@@ -62,18 +63,14 @@ import org.json.JSONArray
 class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAdapter.OnItemLongClickListener,
     MenuProvider {
 
-    companion object {
-        private const val APP_TYPE_ALL = 0
-        private const val APP_TYPE_USER = 1
-        private const val APP_TYPE_SYSTEM = 2
-    }
-
     private var query: String = String()
     /** 0 = all apps, 1 = user apps only, 2 = system apps only */
     private var appTypeFilter: Int = APP_TYPE_ALL
     private var _binding: FragmentPagerBinding? = null
     private val binding get() = _binding!!
     private lateinit var pagerAdapter: PagerAdapter
+    private var itemTouchHelper: ItemTouchHelper? = null
+    private var dragWorkingList: MutableList<AppInfo>? = null
     private var multiselect: Boolean
         set(value) {
             (parentFragment as HomeFragment).multiselect = value
@@ -120,6 +117,7 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
                 val lp = container.layoutParams as ViewGroup.MarginLayoutParams
                 updatePadding(bottom = paddingBottom + container.height + lp.bottomMargin)
             }
+            attachPinnedDragHelper(this)
         }
 
         binding.refresh.apply {
@@ -216,7 +214,7 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
         launchApp(info.packageName)
     }
 
-    override fun onItemLongClick(info: AppInfo): Boolean {
+    override fun onItemLongClick(holder: PagerAdapter.ViewHolder, info: AppInfo): Boolean {
         if (info.applicationInfo == null && (!multiselect || info !in selectedList)) {
             exportToClipboard(listOf(info))
             return true
@@ -227,76 +225,203 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
         }
         val pkg = info.packageName
         val frozen = AppManager.isAppFrozen(pkg)
-        val action = getString(if (frozen) R.string.action_unfreeze else R.string.action_freeze)
-        MaterialAlertDialogBuilder(activity).setTitle(info.name).setItems(
-            resources.getStringArray(R.array.home_action_entries).filter {
-                (it != getString(R.string.action_freeze) || !frozen) && (it != getString(R.string.action_unfreeze) || frozen) && (it != getString(
-                    R.string.action_pin
-                ) || !info.pinned) && (it != getString(R.string.action_unpin) || info.pinned) && (it != getString(
-                    R.string.action_whitelist
-                ) || !info.whitelisted) && (it != getString(R.string.action_remove_whitelist) || info.whitelisted) && (it != getString(
-                    R.string.action_unfreeze_remove_home
-                ) || frozen)
-            }.toTypedArray()
-        ) { _, which ->
-            when (which) {
-                0 -> launchApp(pkg)
-                1 -> setListFrozen(!frozen, listOf(info))
-                2 -> {
-                    val values = resources.getIntArray(R.array.deferred_task_values)
-                    val entries = arrayOfNulls<String>(values.size)
-                    values.forEachIndexed { i, it ->
-                        entries[i] = resources.getQuantityString(R.plurals.deferred_task_entry, it, it)
-                    }
-                    MaterialAlertDialogBuilder(activity).setTitle(R.string.action_deferred_task)
-                        .setItems(entries) { _, i ->
-                            HWork.setDeferredFrozen(pkg, !frozen, values[i].toLong())
-                            Snackbar.make(
-                                activity.fab, resources.getQuantityString(
-                                    R.plurals.msg_deferred_task, values[i], values[i], action, info.name
-                                ), Snackbar.LENGTH_INDEFINITE
-                            ).setAction(R.string.action_undo) { HWork.cancelWork(pkg) }.show()
-                        }.setNegativeButton(android.R.string.cancel, null).show()
+        val actionLabel = getString(if (frozen) R.string.action_unfreeze else R.string.action_freeze)
+
+        data class HomeAction(val id: Int, val title: String)
+
+        val actions = buildList {
+            add(HomeAction(ACT_LAUNCH, getString(R.string.action_launch)))
+            add(HomeAction(ACT_FREEZE_TOGGLE, actionLabel))
+            add(HomeAction(ACT_DEFERRED, getString(R.string.action_deferred_task)))
+            if (info.pinned) {
+                add(HomeAction(ACT_PIN_TOP, getString(R.string.action_pin_move_top)))
+                add(HomeAction(ACT_PIN_UP, getString(R.string.action_pin_move_up)))
+                add(HomeAction(ACT_PIN_DOWN, getString(R.string.action_pin_move_down)))
+                add(HomeAction(ACT_PIN_BOTTOM, getString(R.string.action_pin_move_bottom)))
+                if (query.isEmpty() && !multiselect) {
+                    add(HomeAction(ACT_PIN_DRAG, getString(R.string.action_pin_drag)))
                 }
-
-                3 -> {
-                    info.pinned = !info.pinned
-                    HailData.saveApps()
-                    updateCurrentList()
-                }
-
-                4 -> {
-                    info.whitelisted = !info.whitelisted
-                    HailData.saveApps()
-                    updateCurrentList()
-                }
-
-                5 -> tagDialog(info)
-
-                6 -> if (tabs.tabCount > 1) MaterialAlertDialogBuilder(requireActivity()).setTitle(R.string.action_unfreeze_tag)
-                    .setItems(HailData.tags.map { it.name }.toTypedArray()) { _, index ->
-                        showPrerequisiteDialog(info, pkg,
-                            HailApi.getIntentForPackage(HailApi.ACTION_LAUNCH, pkg).addTag(HailData.tags[index].name))
-                    }.setPositiveButton(R.string.action_skip) { _, _ ->
-                        showPrerequisiteDialog(info, pkg,
-                            HailApi.getIntentForPackage(HailApi.ACTION_LAUNCH, pkg))
-                    }.setNegativeButton(android.R.string.cancel, null).show()
-                else showPrerequisiteDialog(info, pkg,
-                    HailApi.getIntentForPackage(HailApi.ACTION_LAUNCH, pkg))
-
-                7 -> exportToClipboard(listOf(info))
-                8 -> removeCheckedApp(pkg)
-                9 -> {
-                    setListFrozen(false, listOf(info), false)
-                    if (!AppManager.isAppFrozen(pkg)) removeCheckedApp(pkg)
-                }
+                add(HomeAction(ACT_PIN_TOGGLE, getString(R.string.action_unpin)))
+            } else {
+                add(HomeAction(ACT_PIN_TOGGLE, getString(R.string.action_pin)))
             }
-        }.setNeutralButton(R.string.action_details) { _, _ ->
-            HUI.startActivity(
-                Settings.ACTION_APPLICATION_DETAILS_SETTINGS, HPackages.packageUri(pkg)
+            add(
+                HomeAction(
+                    ACT_WHITELIST_TOGGLE,
+                    getString(if (info.whitelisted) R.string.action_remove_whitelist else R.string.action_whitelist)
+                )
             )
-        }.setNegativeButton(android.R.string.cancel, null).show()
+            add(HomeAction(ACT_TAG, getString(R.string.action_tag_set)))
+            add(HomeAction(ACT_SHORTCUT, getString(R.string.action_add_pin_shortcut)))
+            add(HomeAction(ACT_EXPORT, getString(R.string.action_export_clipboard)))
+            add(HomeAction(ACT_REMOVE, getString(R.string.action_remove_home)))
+            if (frozen) add(HomeAction(ACT_UNFREEZE_REMOVE, getString(R.string.action_unfreeze_remove_home)))
+        }
+
+        MaterialAlertDialogBuilder(activity).setTitle(info.name)
+            .setItems(actions.map { it.title }.toTypedArray()) { _, which ->
+                when (actions[which].id) {
+                    ACT_LAUNCH -> launchApp(pkg)
+                    ACT_FREEZE_TOGGLE -> setListFrozen(!frozen, listOf(info))
+                    ACT_DEFERRED -> {
+                        val values = resources.getIntArray(R.array.deferred_task_values)
+                        val entries = arrayOfNulls<String>(values.size)
+                        values.forEachIndexed { i, it ->
+                            entries[i] = resources.getQuantityString(R.plurals.deferred_task_entry, it, it)
+                        }
+                        MaterialAlertDialogBuilder(activity).setTitle(R.string.action_deferred_task)
+                            .setItems(entries) { _, i ->
+                                HWork.setDeferredFrozen(pkg, !frozen, values[i].toLong())
+                                Snackbar.make(
+                                    activity.fab, resources.getQuantityString(
+                                        R.plurals.msg_deferred_task, values[i], values[i], actionLabel, info.name
+                                    ), Snackbar.LENGTH_INDEFINITE
+                                ).setAction(R.string.action_undo) { HWork.cancelWork(pkg) }.show()
+                            }.setNegativeButton(android.R.string.cancel, null).show()
+                    }
+
+                    ACT_PIN_TOGGLE -> {
+                        HailData.togglePinned(info)
+                        updateCurrentList()
+                    }
+
+                    ACT_PIN_TOP -> {
+                        if (HailData.movePinnedToExtreme(info, toStart = true)) updateCurrentList()
+                    }
+
+                    ACT_PIN_UP -> {
+                        if (HailData.movePinned(info, -1)) updateCurrentList()
+                    }
+
+                    ACT_PIN_DOWN -> {
+                        if (HailData.movePinned(info, 1)) updateCurrentList()
+                    }
+
+                    ACT_PIN_BOTTOM -> {
+                        if (HailData.movePinnedToExtreme(info, toStart = false)) updateCurrentList()
+                    }
+
+                    ACT_PIN_DRAG -> {
+                        Snackbar.make(activity.fab, R.string.msg_pin_drag, Snackbar.LENGTH_SHORT).show()
+                        binding.recyclerView.post {
+                            if (holder.bindingAdapterPosition != RecyclerView.NO_POSITION) {
+                                itemTouchHelper?.startDrag(holder)
+                            }
+                        }
+                    }
+
+                    ACT_WHITELIST_TOGGLE -> {
+                        info.whitelisted = !info.whitelisted
+                        HailData.saveApps()
+                        updateCurrentList()
+                    }
+
+                    ACT_TAG -> tagDialog(info)
+
+                    ACT_SHORTCUT -> if (tabs.tabCount > 1) MaterialAlertDialogBuilder(requireActivity())
+                        .setTitle(R.string.action_unfreeze_tag)
+                        .setItems(HailData.tags.map { it.name }.toTypedArray()) { _, index ->
+                            showPrerequisiteDialog(
+                                info, pkg,
+                                HailApi.getIntentForPackage(HailApi.ACTION_LAUNCH, pkg)
+                                    .addTag(HailData.tags[index].name)
+                            )
+                        }.setPositiveButton(R.string.action_skip) { _, _ ->
+                            showPrerequisiteDialog(
+                                info, pkg,
+                                HailApi.getIntentForPackage(HailApi.ACTION_LAUNCH, pkg)
+                            )
+                        }.setNegativeButton(android.R.string.cancel, null).show()
+                    else showPrerequisiteDialog(
+                        info, pkg,
+                        HailApi.getIntentForPackage(HailApi.ACTION_LAUNCH, pkg)
+                    )
+
+                    ACT_EXPORT -> exportToClipboard(listOf(info))
+                    ACT_REMOVE -> removeCheckedApp(pkg)
+                    ACT_UNFREEZE_REMOVE -> {
+                        setListFrozen(false, listOf(info), false)
+                        if (!AppManager.isAppFrozen(pkg)) removeCheckedApp(pkg)
+                    }
+                }
+            }.setNeutralButton(R.string.action_details) { _, _ ->
+                HUI.startActivity(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS, HPackages.packageUri(pkg)
+                )
+            }.setNegativeButton(android.R.string.cancel, null).show()
         return true
+    }
+
+    private fun attachPinnedDragHelper(recyclerView: RecyclerView) {
+        val callback = object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT, 0
+        ) {
+            override fun isLongPressDragEnabled(): Boolean = false
+
+            override fun getMovementFlags(
+                recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder
+            ): Int {
+                val pos = viewHolder.bindingAdapterPosition
+                val info = pagerAdapter.currentList.getOrNull(pos)
+                if (info == null || !info.pinned || multiselect || query.isNotEmpty()) return 0
+                return makeMovementFlags(
+                    ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT, 0
+                )
+            }
+
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val from = viewHolder.bindingAdapterPosition
+                val to = target.bindingAdapterPosition
+                if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                val working = dragWorkingList ?: pagerAdapter.currentList.toMutableList().also { dragWorkingList = it }
+                val fromInfo = working.getOrNull(from) ?: return false
+                val toInfo = working.getOrNull(to) ?: return false
+                if (!fromInfo.pinned || !toInfo.pinned) return false
+                val item = working.removeAt(from)
+                working.add(to, item)
+                // Keep pinOrder in sync live so DiffUtil/sort stays consistent mid-drag
+                working.filter { it.pinned }.forEachIndexed { index, app -> app.pinOrder = index }
+                pagerAdapter.submitList(working.toList())
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                val working = dragWorkingList ?: return
+                dragWorkingList = null
+                HailData.applyPinnedOrder(working.filter { it.pinned })
+                updateCurrentList()
+            }
+        }
+        itemTouchHelper = ItemTouchHelper(callback).also { it.attachToRecyclerView(recyclerView) }
+    }
+
+    companion object {
+        private const val APP_TYPE_ALL = 0
+        private const val APP_TYPE_USER = 1
+        private const val APP_TYPE_SYSTEM = 2
+
+        private const val ACT_LAUNCH = 1
+        private const val ACT_FREEZE_TOGGLE = 2
+        private const val ACT_DEFERRED = 3
+        private const val ACT_PIN_TOGGLE = 4
+        private const val ACT_PIN_TOP = 5
+        private const val ACT_PIN_UP = 6
+        private const val ACT_PIN_DOWN = 7
+        private const val ACT_PIN_BOTTOM = 8
+        private const val ACT_PIN_DRAG = 9
+        private const val ACT_WHITELIST_TOGGLE = 10
+        private const val ACT_TAG = 11
+        private const val ACT_SHORTCUT = 12
+        private const val ACT_EXPORT = 13
+        private const val ACT_REMOVE = 14
+        private const val ACT_UNFREEZE_REMOVE = 15
     }
 
     private fun tagDialog(info: AppInfo) {

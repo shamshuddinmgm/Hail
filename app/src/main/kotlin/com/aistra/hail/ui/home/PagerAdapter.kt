@@ -34,7 +34,7 @@ class PagerAdapter(
         holder.loadIconJob?.cancel()
         holder.itemView.run {
             setOnClickListener { onItemClickListener.onItemClick(info) }
-            setOnLongClickListener { onItemLongClickListener.onItemLongClick(info) }
+            setOnLongClickListener { onItemLongClickListener.onItemLongClick(holder, info) }
             findViewById<ImageView>(R.id.app_icon).run {
                 info.applicationInfo?.let {
                     holder.loadIconJob = AppIconCache.loadIconBitmapAsync(
@@ -51,6 +51,7 @@ class PagerAdapter(
             }
             findViewById<TextView>(R.id.app_name).run {
                 text = buildString {
+                    if (info.pinned) append("\uD83D\uDCCC") // pushpin
                     if (!HailData.grayscaleIcon && info.state == AppInfo.State.FROZEN) append("\u2744\uFE0F")
                     if (info.whitelisted) append("\uD83D\uDD12")
                     append(info.name)
@@ -106,7 +107,7 @@ class PagerAdapter(
     }
 
     interface OnItemLongClickListener {
-        fun onItemLongClick(info: AppInfo): Boolean
+        fun onItemLongClick(holder: ViewHolder, info: AppInfo): Boolean
     }
 }
 
@@ -114,6 +115,8 @@ private fun AppInfo.getFlag(selectedList: List<AppInfo>) =
     (1 shl state.ordinal) or
             (this in selectedList).shl(3) or
             whitelisted.shl(4) or
-            ((frozenMode?.hashCode() ?: 0) and 0x7FFFFF).shl(5)
+            pinned.shl(5) or
+            ((pinOrder and 0xFF) shl 6) or
+            ((frozenMode?.hashCode() ?: 0) and 0x3FFF).shl(14)
 
 private fun Boolean.shl(bitCount: Int) = if (this) 1 shl bitCount else 0

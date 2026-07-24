@@ -7,6 +7,8 @@ import com.aistra.hail.utils.HPackages
 class AppInfo(
     val packageName: String,
     var pinned: Boolean = false,
+    /** Manual order among pinned apps (lower = earlier). Ignored when not pinned. */
+    var pinOrder: Int = 0,
     var whitelisted: Boolean = false,
     val tagIdList: MutableList<Int> = mutableListOf(0),
     var addToHomeScreen: Boolean = false,

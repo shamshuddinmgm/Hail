@@ -15,6 +15,7 @@ object NameComparator : Comparator<Any> {
         a is AppInfo && b is AppInfo -> when {
             a.pinned && !b.pinned -> -1
             b.pinned && !a.pinned -> 1
+            a.pinned && b.pinned && a.pinOrder != b.pinOrder -> a.pinOrder.compareTo(b.pinOrder)
             else -> c.compare(a.name, b.name)
         }
         else -> 0

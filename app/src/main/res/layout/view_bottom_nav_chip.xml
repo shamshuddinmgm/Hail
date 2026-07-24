@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Compact nav chip: icon + label, theme-accent border applied in code. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_nav_chip"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:minWidth="@dimen/bottom_nav_chip_min_width"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/bottom_nav_chip_padding_h"
+    android:paddingVertical="@dimen/bottom_nav_chip_padding_v"
+    tools:ignore="UseCompoundDrawables">
+
+    <ImageView
+        android:id="@+id/nav_chip_icon"
+        android:layout_width="@dimen/bottom_nav_icon_size"
+        android:layout_height="@dimen/bottom_nav_icon_size"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
+        tools:src="@drawable/ic_round_frozen" />
+
+    <TextView
+        android:id="@+id/nav_chip_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textSize="@dimen/bottom_nav_label_size"
+        tools:text="Home" />
+</LinearLayout>

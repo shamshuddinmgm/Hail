@@ -32,6 +32,7 @@ object SettingsBackupManager {
             val obj = JSONObject()
             obj.put(HailData.KEY_PACKAGE, appInfo.packageName)
             obj.put("pinned", appInfo.pinned)
+            obj.put(HailData.KEY_PIN_ORDER, appInfo.pinOrder)
             obj.put("whitelisted", appInfo.whitelisted)
             obj.put("tags", JSONArray(appInfo.tagIdList))
             obj.put("add_to_home_screen", appInfo.addToHomeScreen)
@@ -146,6 +147,7 @@ object SettingsBackupManager {
                 val obj = appsArray.getJSONObject(i)
                 val packageName = obj.getString(HailData.KEY_PACKAGE)
                 val pinned = obj.optBoolean("pinned", false)
+                val pinOrder = obj.optInt(HailData.KEY_PIN_ORDER, i)
                 val whitelisted = obj.optBoolean("whitelisted", false)
                 val tagsJsonArray = obj.optJSONArray("tags")
                 val tagIdList: MutableList<Int> = if (tagsJsonArray != null) {
@@ -162,6 +164,7 @@ object SettingsBackupManager {
                     com.aistra.hail.app.AppInfo(
                         packageName = packageName,
                         pinned = pinned,
+                        pinOrder = pinOrder,
                         whitelisted = whitelisted,
                         tagIdList = tagIdList,
                         addToHomeScreen = addToHomeScreen,
