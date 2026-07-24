@@ -35,7 +35,6 @@ import com.aistra.hail.ui.theme.AppTheme
 import com.aistra.hail.utils.HPackages
 import com.aistra.hail.utils.HUI
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.imageview.ShapeableImageView
 import java.text.SimpleDateFormat
 
 class AboutFragment : MainFragment() {
@@ -183,16 +182,9 @@ class AboutFragment : MainFragment() {
                     }
 
                     1 -> MaterialAlertDialogBuilder(activity).setTitle(R.string.title_donate)
-                        .setView(ShapeableImageView(activity).apply {
-                            val padding = resources.getDimensionPixelOffset(R.dimen.padding_large)
-                            setPadding(0, padding, 0, padding)
-                            setImageResource(R.mipmap.qr_wechat)
-                        }).setPositiveButton(R.string.donate_wechat_scan) { _, _ ->
-                            app.packageManager.getLaunchIntentForPackage("com.tencent.mm")?.let {
-                                it.putExtra("LauncherUI.From.Scaner.Shortcut", true)
-                                startActivity(it)
-                            } ?: HUI.showToast(R.string.app_not_installed)
-                        }.setNegativeButton(android.R.string.cancel, null).show()
+                        .setMessage(R.string.donate_wechat)
+                        .setPositiveButton(android.R.string.ok, null)
+                        .show()
 
                     2 -> MaterialAlertDialogBuilder(activity).setTitle(R.string.title_donate)
                         .setMessage(R.string.donate_bilibili_msg)
