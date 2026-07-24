@@ -27,11 +27,13 @@ object AppManager {
                 ?.takeIf { it.isNotEmpty() }
         }
         return when {
+            // No recorded Hail freeze: treat as frozen only for Disable / Hide / Suspend.
+            // Do NOT use FLAG_STOPPED here — Android keeps apps "stopped" after enable/unsuspend
+            // until the user launches them once, which falsely kept icons grey after Unfreeze all.
             effective == null || effective == HailData.MODE_DEFAULT ->
                 HPackages.isAppDisabled(packageName)
                         || HPackages.isAppHidden(packageName)
                         || HPackages.isAppSuspended(packageName)
-                        || HPackages.isAppStopped(packageName)
 
             effective.endsWith(HailData.STOP) -> HPackages.isAppStopped(packageName)
             effective.endsWith(HailData.DISABLE) -> HPackages.isAppDisabled(packageName)

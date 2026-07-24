@@ -212,6 +212,10 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_amoled">AMOLED Black</string>
+    <string name="theme_dark_gray">Dark Gray</string>
+    <string name="theme_chocolate">Chocolate Brown</string>
+    <string name="theme_midnight">Midnight Navy</string>
+    <string name="theme_ember">Ember Forge</string>
     <string name="theme_neon_hacker">Neon Hacker</string>
     <string name="theme_neon_cyber">Neon Cybertron</string>
     <string name="theme_neon_plasma">Neon Plasma</string>

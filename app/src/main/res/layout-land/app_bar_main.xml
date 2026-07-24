@@ -47,9 +47,9 @@
             app:icon="@drawable/ic_round_frozen"
             app:iconTint="?attr/colorOnPrimaryContainer"
             app:rippleColor="?attr/colorPrimary"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.Hail.Fab"
-            app:strokeColor="?attr/colorOutlineVariant"
-            app:strokeWidth="1dp" />
+            app:shapeAppearanceOverlay="?attr/shapeAppearanceCornerLarge"
+            app:strokeColor="?attr/colorPrimary"
+            app:strokeWidth="1.5dp" />
 
     </LinearLayout>
 

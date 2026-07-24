@@ -105,6 +105,10 @@ object HailData {
     const val THEME_LIGHT = "theme_light"
     const val THEME_DARK = "theme_dark"
     const val THEME_AMOLED = "theme_amoled"
+    const val THEME_DARK_GRAY = "theme_dark_gray"
+    const val THEME_CHOCOLATE = "theme_chocolate"
+    const val THEME_MIDNIGHT = "theme_midnight"
+    const val THEME_EMBER = "theme_ember"
     const val THEME_NEON_HACKER = "theme_neon_hacker"
     const val THEME_NEON_CYBER = "theme_neon_cyber"
     const val THEME_NEON_PLASMA = "theme_neon_plasma"
@@ -114,6 +118,10 @@ object HailData {
         THEME_LIGHT,
         THEME_DARK,
         THEME_AMOLED,
+        THEME_DARK_GRAY,
+        THEME_CHOCOLATE,
+        THEME_MIDNIGHT,
+        THEME_EMBER,
         THEME_NEON_HACKER,
         THEME_NEON_CYBER,
         THEME_NEON_PLASMA,

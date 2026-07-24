@@ -11,6 +11,10 @@ object HTheme {
     fun applyActivityTheme(activity: Activity) {
         when (HailData.appTheme) {
             HailData.THEME_AMOLED -> activity.setTheme(R.style.Theme_Hail_Amoled)
+            HailData.THEME_DARK_GRAY -> activity.setTheme(R.style.Theme_Hail_DarkGray)
+            HailData.THEME_CHOCOLATE -> activity.setTheme(R.style.Theme_Hail_Chocolate)
+            HailData.THEME_MIDNIGHT -> activity.setTheme(R.style.Theme_Hail_Midnight)
+            HailData.THEME_EMBER -> activity.setTheme(R.style.Theme_Hail_Ember)
             HailData.THEME_NEON_HACKER -> activity.setTheme(R.style.Theme_Hail_NeonHacker)
             HailData.THEME_NEON_CYBER -> activity.setTheme(R.style.Theme_Hail_NeonCyber)
             HailData.THEME_NEON_PLASMA -> activity.setTheme(R.style.Theme_Hail_NeonPlasma)
@@ -27,12 +31,19 @@ object HTheme {
     fun isForcedDark(theme: String = HailData.appTheme): Boolean = when (theme) {
         HailData.THEME_DARK,
         HailData.THEME_AMOLED,
+        HailData.THEME_DARK_GRAY,
+        HailData.THEME_CHOCOLATE,
+        HailData.THEME_MIDNIGHT,
+        HailData.THEME_EMBER,
         HailData.THEME_NEON_HACKER,
         HailData.THEME_NEON_CYBER,
         HailData.THEME_NEON_PLASMA,
         HailData.THEME_NEON_ICE -> true
         else -> false
     }
+
+    fun isCustomPremium(theme: String = HailData.appTheme): Boolean =
+        theme != HailData.FOLLOW_SYSTEM && theme != HailData.THEME_LIGHT && theme != HailData.THEME_DARK
 
     /** Prefer the highest refresh rate the display supports (e.g. 120 Hz). */
     fun enableHighRefreshRate(activity: Activity) {

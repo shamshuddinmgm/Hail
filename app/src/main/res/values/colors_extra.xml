@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Gray — graphite -->
+    <color name="gray_primary">#B0BEC5</color>
+    <color name="gray_onPrimary">#1A1F22</color>
+    <color name="gray_primaryContainer">#455A64</color>
+    <color name="gray_onPrimaryContainer">#ECEFF1</color>
+    <color name="gray_secondary">#90A4AE</color>
+    <color name="gray_onSecondary">#1A1F22</color>
+    <color name="gray_secondaryContainer">#37474F</color>
+    <color name="gray_onSecondaryContainer">#CFD8DC</color>
+    <color name="gray_tertiary">#78909C</color>
+    <color name="gray_onTertiary">#0D1114</color>
+    <color name="gray_tertiaryContainer">#546E7A</color>
+    <color name="gray_onTertiaryContainer">#ECEFF1</color>
+    <color name="gray_background">#121416</color>
+    <color name="gray_onBackground">#E8EAED</color>
+    <color name="gray_surface">#1A1D1F</color>
+    <color name="gray_onSurface">#E8EAED</color>
+    <color name="gray_surfaceVariant">#2C3135</color>
+    <color name="gray_onSurfaceVariant">#B0B8BE</color>
+    <color name="gray_outline">#6B737A</color>
+    <color name="gray_outlineVariant">#2C3135</color>
+    <color name="gray_surfaceContainer">#1E2225</color>
+    <color name="gray_surfaceContainerHigh">#262A2E</color>
+    <color name="gray_surfaceContainerHighest">#30353A</color>
+
+    <!-- Chocolate brown -->
+    <color name="choco_primary">#E8B86D</color>
+    <color name="choco_onPrimary">#3E2723</color>
+    <color name="choco_primaryContainer">#6D4C41</color>
+    <color name="choco_onPrimaryContainer">#FFE8C8</color>
+    <color name="choco_secondary">#D7CCC8</color>
+    <color name="choco_onSecondary">#3E2723</color>
+    <color name="choco_secondaryContainer">#5D4037</color>
+    <color name="choco_onSecondaryContainer">#EFEBE9</color>
+    <color name="choco_tertiary">#FFCC80</color>
+    <color name="choco_onTertiary">#4E342E</color>
+    <color name="choco_tertiaryContainer">#8D6E63</color>
+    <color name="choco_onTertiaryContainer">#FFF3E0</color>
+    <color name="choco_background">#1A100C</color>
+    <color name="choco_onBackground">#F5E6DC</color>
+    <color name="choco_surface">#221510</color>
+    <color name="choco_onSurface">#F5E6DC</color>
+    <color name="choco_surfaceVariant">#3E2A22</color>
+    <color name="choco_onSurfaceVariant">#D7C4B8</color>
+    <color name="choco_outline">#8D6E63</color>
+    <color name="choco_outlineVariant">#3E2A22</color>
+    <color name="choco_surfaceContainer">#2A1A14</color>
+    <color name="choco_surfaceContainerHigh">#342018</color>
+    <color name="choco_surfaceContainerHighest">#402820</color>
+
+    <!-- Midnight navy -->
+    <color name="mid_primary">#82B1FF</color>
+    <color name="mid_onPrimary">#0A1628</color>
+    <color name="mid_primaryContainer">#1A3A6B</color>
+    <color name="mid_onPrimaryContainer">#D6E4FF</color>
+    <color name="mid_secondary">#9FA8DA</color>
+    <color name="mid_onSecondary">#12182E</color>
+    <color name="mid_secondaryContainer">#303F9F</color>
+    <color name="mid_onSecondaryContainer">#E8EAF6</color>
+    <color name="mid_tertiary">#80DEEA</color>
+    <color name="mid_onTertiary">#00363D</color>
+    <color name="mid_tertiaryContainer">#006064</color>
+    <color name="mid_onTertiaryContainer">#E0F7FA</color>
+    <color name="mid_background">#060B16</color>
+    <color name="mid_onBackground">#E3EAF8</color>
+    <color name="mid_surface">#0A1220</color>
+    <color name="mid_onSurface">#E3EAF8</color>
+    <color name="mid_surfaceVariant">#1A2740</color>
+    <color name="mid_onSurfaceVariant">#B0C0DC</color>
+    <color name="mid_outline">#5C6B8A</color>
+    <color name="mid_outlineVariant">#1A2740</color>
+    <color name="mid_surfaceContainer">#0E1828</color>
+    <color name="mid_surfaceContainerHigh">#142033</color>
+    <color name="mid_surfaceContainerHighest">#1C2C44</color>
+
+    <!-- Ember — warm ember / forge -->
+    <color name="ember_primary">#FF8A50</color>
+    <color name="ember_onPrimary">#3B1400</color>
+    <color name="ember_primaryContainer">#9A3412</color>
+    <color name="ember_onPrimaryContainer">#FFE0D0</color>
+    <color name="ember_secondary">#FFB74D</color>
+    <color name="ember_onSecondary">#3B2200</color>
+    <color name="ember_secondaryContainer">#E65100</color>
+    <color name="ember_onSecondaryContainer">#FFF3E0</color>
+    <color name="ember_tertiary">#FFCC80</color>
+    <color name="ember_onTertiary">#3E2723</color>
+    <color name="ember_tertiaryContainer">#BF360C</color>
+    <color name="ember_onTertiaryContainer">#FBE9E7</color>
+    <color name="ember_background">#140A06</color>
+    <color name="ember_onBackground">#FFEDE4</color>
+    <color name="ember_surface">#1C100A</color>
+    <color name="ember_onSurface">#FFEDE4</color>
+    <color name="ember_surfaceVariant">#3A2218</color>
+    <color name="ember_onSurfaceVariant">#E0C0B0</color>
+    <color name="ember_outline">#A07058</color>
+    <color name="ember_outlineVariant">#3A2218</color>
+    <color name="ember_surfaceContainer">#24140C</color>
+    <color name="ember_surfaceContainerHigh">#2E1A10</color>
+    <color name="ember_surfaceContainerHighest">#3A2218</color>
+</resources>

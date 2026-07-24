@@ -1,16 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="Theme.Hail.WindowChrome">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
-        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="o_mr1">shortEdges</item>
-        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
-        <item name="android:windowAnimationStyle">@style/Animation.Hail.Activity</item>
-    </style>
-
     <style name="Animation.Hail.Activity" parent="@android:style/Animation.Activity">
         <item name="android:activityOpenEnterAnimation">@anim/hail_fade_in</item>
         <item name="android:activityOpenExitAnimation">@anim/hail_fade_out</item>
@@ -18,12 +8,33 @@
         <item name="android:activityCloseExitAnimation">@anim/hail_fade_out</item>
     </style>
 
-    <style name="Theme.Hail.Amoled" parent="Theme.Material3.Dark.NoActionBar">
+    <!-- Shared dark chrome bits applied by all premium dark themes -->
+    <style name="Theme.Hail.PremiumDark" parent="Theme.Material3.Dark.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
         <item name="android:windowAnimationStyle">@style/Animation.Hail.Activity</item>
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+        <item name="colorControlNormal">?attr/colorPrimary</item>
+        <item name="colorControlActivated">?attr/colorPrimary</item>
+        <item name="actionBarTheme">@style/Theme.Hail.AppBarOverlay</item>
+        <item name="toolbarStyle">@style/Widget.Material3.Toolbar</item>
+        <item name="bottomNavigationStyle">@style/Widget.Hail.BottomNav</item>
+    </style>
+
+    <style name="Widget.Hail.BottomNav" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">?attr/colorSurfaceContainer</item>
+        <item name="itemIconTint">@color/nav_item_tint</item>
+        <item name="itemTextColor">@color/nav_item_tint</item>
+        <item name="itemRippleColor">?attr/colorPrimary</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <style name="Theme.Hail.Amoled" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">sans-serif</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Soft</item>
         <item name="colorPrimary">@color/amoled_primary</item>
         <item name="colorOnPrimary">@color/amoled_onPrimary</item>
         <item name="colorPrimaryContainer">@color/amoled_primaryContainer</item>
@@ -51,12 +62,140 @@
         <item name="colorSurfaceContainerLowest">@color/amoled_background</item>
     </style>
 
-    <style name="Theme.Hail.NeonHacker" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
-        <item name="android:windowAnimationStyle">@style/Animation.Hail.Activity</item>
+    <style name="Theme.Hail.DarkGray" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Sharp</item>
+        <item name="colorPrimary">@color/gray_primary</item>
+        <item name="colorOnPrimary">@color/gray_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/gray_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/gray_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/gray_secondary</item>
+        <item name="colorOnSecondary">@color/gray_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/gray_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/gray_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/gray_tertiary</item>
+        <item name="colorOnTertiary">@color/gray_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/gray_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/gray_onTertiaryContainer</item>
+        <item name="android:colorBackground">@color/gray_background</item>
+        <item name="colorOnBackground">@color/gray_onBackground</item>
+        <item name="colorSurface">@color/gray_surface</item>
+        <item name="colorOnSurface">@color/gray_onSurface</item>
+        <item name="colorSurfaceVariant">@color/gray_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/gray_onSurfaceVariant</item>
+        <item name="colorOutline">@color/gray_outline</item>
+        <item name="colorOutlineVariant">@color/gray_outlineVariant</item>
+        <item name="colorSurfaceContainer">@color/gray_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/gray_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/gray_surfaceContainerHighest</item>
+        <item name="colorSurfaceContainerLow">@color/gray_surfaceContainer</item>
+        <item name="colorSurfaceContainerLowest">@color/gray_background</item>
+    </style>
+
+    <style name="Theme.Hail.Chocolate" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">serif</item>
+        <item name="android:fontFamily">serif</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Hail.Chocolate</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Hail.Chocolate</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Soft</item>
+        <item name="colorPrimary">@color/choco_primary</item>
+        <item name="colorOnPrimary">@color/choco_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/choco_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/choco_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/choco_secondary</item>
+        <item name="colorOnSecondary">@color/choco_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/choco_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/choco_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/choco_tertiary</item>
+        <item name="colorOnTertiary">@color/choco_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/choco_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/choco_onTertiaryContainer</item>
+        <item name="android:colorBackground">@color/choco_background</item>
+        <item name="colorOnBackground">@color/choco_onBackground</item>
+        <item name="colorSurface">@color/choco_surface</item>
+        <item name="colorOnSurface">@color/choco_onSurface</item>
+        <item name="colorSurfaceVariant">@color/choco_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/choco_onSurfaceVariant</item>
+        <item name="colorOutline">@color/choco_outline</item>
+        <item name="colorOutlineVariant">@color/choco_outlineVariant</item>
+        <item name="colorSurfaceContainer">@color/choco_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/choco_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/choco_surfaceContainerHighest</item>
+        <item name="colorSurfaceContainerLow">@color/choco_surfaceContainer</item>
+        <item name="colorSurfaceContainerLowest">@color/choco_background</item>
+    </style>
+
+    <style name="Theme.Hail.Midnight" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Round</item>
+        <item name="colorPrimary">@color/mid_primary</item>
+        <item name="colorOnPrimary">@color/mid_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/mid_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/mid_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/mid_secondary</item>
+        <item name="colorOnSecondary">@color/mid_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/mid_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/mid_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/mid_tertiary</item>
+        <item name="colorOnTertiary">@color/mid_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/mid_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/mid_onTertiaryContainer</item>
+        <item name="android:colorBackground">@color/mid_background</item>
+        <item name="colorOnBackground">@color/mid_onBackground</item>
+        <item name="colorSurface">@color/mid_surface</item>
+        <item name="colorOnSurface">@color/mid_onSurface</item>
+        <item name="colorSurfaceVariant">@color/mid_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/mid_onSurfaceVariant</item>
+        <item name="colorOutline">@color/mid_outline</item>
+        <item name="colorOutlineVariant">@color/mid_outlineVariant</item>
+        <item name="colorSurfaceContainer">@color/mid_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/mid_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/mid_surfaceContainerHighest</item>
+        <item name="colorSurfaceContainerLow">@color/mid_surfaceContainer</item>
+        <item name="colorSurfaceContainerLowest">@color/mid_background</item>
+    </style>
+
+    <style name="Theme.Hail.Ember" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">sans-serif-black</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Hail.Ember</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Sharp</item>
+        <item name="colorPrimary">@color/ember_primary</item>
+        <item name="colorOnPrimary">@color/ember_onPrimary</item>
+        <item name="colorPrimaryContainer">@color/ember_primaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/ember_onPrimaryContainer</item>
+        <item name="colorSecondary">@color/ember_secondary</item>
+        <item name="colorOnSecondary">@color/ember_onSecondary</item>
+        <item name="colorSecondaryContainer">@color/ember_secondaryContainer</item>
+        <item name="colorOnSecondaryContainer">@color/ember_onSecondaryContainer</item>
+        <item name="colorTertiary">@color/ember_tertiary</item>
+        <item name="colorOnTertiary">@color/ember_onTertiary</item>
+        <item name="colorTertiaryContainer">@color/ember_tertiaryContainer</item>
+        <item name="colorOnTertiaryContainer">@color/ember_onTertiaryContainer</item>
+        <item name="android:colorBackground">@color/ember_background</item>
+        <item name="colorOnBackground">@color/ember_onBackground</item>
+        <item name="colorSurface">@color/ember_surface</item>
+        <item name="colorOnSurface">@color/ember_onSurface</item>
+        <item name="colorSurfaceVariant">@color/ember_surfaceVariant</item>
+        <item name="colorOnSurfaceVariant">@color/ember_onSurfaceVariant</item>
+        <item name="colorOutline">@color/ember_outline</item>
+        <item name="colorOutlineVariant">@color/ember_outlineVariant</item>
+        <item name="colorSurfaceContainer">@color/ember_surfaceContainer</item>
+        <item name="colorSurfaceContainerHigh">@color/ember_surfaceContainerHigh</item>
+        <item name="colorSurfaceContainerHighest">@color/ember_surfaceContainerHighest</item>
+        <item name="colorSurfaceContainerLow">@color/ember_surfaceContainer</item>
+        <item name="colorSurfaceContainerLowest">@color/ember_background</item>
+    </style>
+
+    <style name="Theme.Hail.NeonHacker" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">monospace</item>
+        <item name="android:fontFamily">monospace</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Hail.Hacker</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.Hail.Hacker</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.Hail.Hacker</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Sharp</item>
         <item name="colorPrimary">@color/hacker_primary</item>
         <item name="colorOnPrimary">@color/hacker_onPrimary</item>
         <item name="colorPrimaryContainer">@color/hacker_primaryContainer</item>
@@ -84,12 +223,12 @@
         <item name="colorSurfaceContainerLowest">@color/hacker_background</item>
     </style>
 
-    <style name="Theme.Hail.NeonCyber" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
-        <item name="android:windowAnimationStyle">@style/Animation.Hail.Activity</item>
+    <style name="Theme.Hail.NeonCyber" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Hail.Cyber</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.Hail.Cyber</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Pill</item>
         <item name="colorPrimary">@color/cyber_primary</item>
         <item name="colorOnPrimary">@color/cyber_onPrimary</item>
         <item name="colorPrimaryContainer">@color/cyber_primaryContainer</item>
@@ -117,12 +256,11 @@
         <item name="colorSurfaceContainerLowest">@color/cyber_background</item>
     </style>
 
-    <style name="Theme.Hail.NeonPlasma" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
-        <item name="android:windowAnimationStyle">@style/Animation.Hail.Activity</item>
+    <style name="Theme.Hail.NeonPlasma" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Hail.Plasma</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Round</item>
         <item name="colorPrimary">@color/plasma_primary</item>
         <item name="colorOnPrimary">@color/plasma_onPrimary</item>
         <item name="colorPrimaryContainer">@color/plasma_primaryContainer</item>
@@ -150,12 +288,11 @@
         <item name="colorSurfaceContainerLowest">@color/plasma_background</item>
     </style>
 
-    <style name="Theme.Hail.NeonIce" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
-        <item name="android:windowAnimationStyle">@style/Animation.Hail.Activity</item>
+    <style name="Theme.Hail.NeonIce" parent="Theme.Hail.PremiumDark">
+        <item name="fontFamily">sans-serif-light</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Hail.Ice</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Soft</item>
         <item name="colorPrimary">@color/ice_primary</item>
         <item name="colorOnPrimary">@color/ice_onPrimary</item>
         <item name="colorPrimaryContainer">@color/ice_primaryContainer</item>

@@ -57,6 +57,10 @@
         <item>@string/theme_light</item>
         <item>@string/theme_dark</item>
         <item>@string/theme_amoled</item>
+        <item>@string/theme_dark_gray</item>
+        <item>@string/theme_chocolate</item>
+        <item>@string/theme_midnight</item>
+        <item>@string/theme_ember</item>
         <item>@string/theme_neon_hacker</item>
         <item>@string/theme_neon_cyber</item>
         <item>@string/theme_neon_plasma</item>

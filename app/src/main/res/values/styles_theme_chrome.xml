@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Shape.Hail.Sharp" parent="ShapeAppearance.Material3.Corner.None">
+        <item name="cornerSize">4dp</item>
+    </style>
+    <style name="Shape.Hail.Soft" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="Shape.Hail.Round" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">20dp</item>
+    </style>
+    <style name="Shape.Hail.Pill" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ShapeAppearance.Hail.Fab.Sharp" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">6dp</item>
+    </style>
+    <style name="ShapeAppearance.Hail.Fab.Cyber" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">22dp</item>
+    </style>
+    <style name="ShapeAppearance.Hail.Fab.Soft" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerSize">14dp</item>
+    </style>
+
+    <style name="TextAppearance.Hail.Hacker" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">monospace</item>
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
+    <style name="TextAppearance.Hail.Cyber" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">sans-serif-condensed</item>
+        <item name="android:fontFamily">sans-serif-condensed</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+    <style name="TextAppearance.Hail.Plasma" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+    <style name="TextAppearance.Hail.Ice" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">sans-serif-light</item>
+        <item name="android:fontFamily">sans-serif-light</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+    <style name="TextAppearance.Hail.Chocolate" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">serif</item>
+        <item name="android:fontFamily">serif</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+    <style name="TextAppearance.Hail.Ember" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">sans-serif-black</item>
+        <item name="android:fontFamily">sans-serif-black</item>
+        <item name="android:letterSpacing">0.03</item>
+    </style>
+</resources>
