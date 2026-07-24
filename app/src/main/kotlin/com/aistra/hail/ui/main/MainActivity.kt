@@ -14,9 +14,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.aistra.hail.R
 import com.aistra.hail.app.HailData
@@ -38,6 +39,18 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
     private lateinit var navController: NavController
     private lateinit var navHostFragment: NavHostFragment
 
+    private val panelNavOptions by lazy {
+        val startId = navController.graph.findStartDestination().id
+        NavOptions.Builder()
+            .setLaunchSingleTop(true)
+            .setRestoreState(true)
+            .setPopUpTo(startId, inclusive = false, saveState = true)
+            .setEnterAnim(R.anim.nav_enter)
+            .setExitAnim(R.anim.nav_exit)
+            .setPopEnterAnim(R.anim.nav_pop_enter)
+            .setPopExitAnim(R.anim.nav_pop_exit)
+            .build()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         HTheme.applyActivityTheme(this)
         super.onCreate(savedInstanceState)
@@ -92,11 +105,22 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         setupActionBarWithNavController(navController, appBarConfiguration)
 
         val navListener = NavigationBarView.OnItemSelectedListener { item ->
-            if (item.itemId == R.id.nav_search) {
-                openHomeSearch()
-                false
-            } else {
-                NavigationUI.onNavDestinationSelected(item, navController)
+            when (item.itemId) {
+                R.id.nav_search -> {
+                    openHomeSearch()
+                    false
+                }
+                else -> {
+                    if (item.itemId != navController.currentDestination?.id) {
+                        runCatching {
+                            navController.navigate(item.itemId, null, panelNavOptions)
+                        }.onFailure {
+                            // Destination may already be on back stack — pop to it
+                            runCatching { navController.popBackStack(item.itemId, false) }
+                        }
+                    }
+                    true
+                }
             }
         }
         bottomNav?.setOnItemSelectedListener(navListener)
@@ -119,7 +143,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
 
     fun openHomeSearch() {
         if (navController.currentDestination?.id != R.id.nav_home) {
-            navController.navigate(R.id.nav_home)
+            runCatching { navController.navigate(R.id.nav_home, null, panelNavOptions) }
         }
         fab.post {
             (navHostFragment.childFragmentManager.primaryNavigationFragment as? HomeFragment)
@@ -129,7 +153,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
 
     fun goHomeTab() {
         if (navController.currentDestination?.id != R.id.nav_home) {
-            navController.navigate(R.id.nav_home)
+            runCatching { navController.navigate(R.id.nav_home, null, panelNavOptions) }
         }
         fab.post {
             (navHostFragment.childFragmentManager.primaryNavigationFragment as? HomeFragment)

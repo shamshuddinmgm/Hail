@@ -24,7 +24,9 @@ class AppsAdapter : ListAdapter<ApplicationInfo, AppsAdapter.ViewHolder>(DIFF) {
             ): Boolean = oldItem.packageName == newItem.packageName
 
             override fun areContentsTheSame(oldItem: ApplicationInfo, newItem: ApplicationInfo): Boolean =
-                oldItem.flags and ApplicationInfo.FLAG_INSTALLED == newItem.flags and ApplicationInfo.FLAG_INSTALLED
+                oldItem.flags and ApplicationInfo.FLAG_INSTALLED == newItem.flags and ApplicationInfo.FLAG_INSTALLED &&
+                        HailData.isChecked(oldItem.packageName) == HailData.isChecked(newItem.packageName) &&
+                        AppManager.isAppFrozen(oldItem.packageName) == AppManager.isAppFrozen(newItem.packageName)
         }
     }
 
@@ -55,9 +57,7 @@ class AppsAdapter : ListAdapter<ApplicationInfo, AppsAdapter.ViewHolder>(DIFF) {
         var loadIconJob: Job? = null
         private val pkg get() = info.packageName
 
-        /**
-         * Flag that view data is being updated to avoid triggering the event.
-         * */
+        /** Flag that view data is being updated to avoid triggering the event. */
         private var updating = false
 
         init {

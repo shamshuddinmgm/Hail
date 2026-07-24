@@ -139,7 +139,7 @@ class AppsFragment : MainFragment(), AppsAdapter.OnItemClickListener, AppsAdapte
     }
 
     override fun onItemClick(buttonView: CompoundButton) {
-//        buttonView.toggle()
+        buttonView.toggle()
     }
 
     override fun onCreateContextMenu(
@@ -387,6 +387,7 @@ class AppsFragment : MainFragment(), AppsAdapter.OnItemClickListener, AppsAdapte
     private fun updateDisplayAppList() = model.updateDisplayAppList()
 
     override fun onDestroy() {
+        runCatching { binding.fastScroll.detach() }
         appsAdapter.onDestroy()
         super.onDestroy()
         _binding = null

@@ -14,12 +14,14 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
+            android:paddingEnd="8dp"
             android:scrollbars="none"
             tools:listitem="@layout/item_apps" />
 
+        <!-- Narrow edge slider — clear of checkboxes (row already pads 36dp) -->
         <com.aistra.hail.views.FastScrollSlider
             android:id="@+id/fast_scroll"
-            android:layout_width="28dp"
+            android:layout_width="20dp"
             android:layout_height="match_parent"
             android:layout_gravity="end"
             android:layout_marginTop="8dp"

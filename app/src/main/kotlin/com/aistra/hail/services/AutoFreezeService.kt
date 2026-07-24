@@ -47,13 +47,12 @@ class AutoFreezeService : NotificationListenerService() {
         val name = getString(R.string.auto_freeze)
         val importance = NotificationManagerCompat.IMPORTANCE_LOW
         val channel = NotificationChannelCompat.Builder(channelID, importance).setName(name).build()
-        // Register the channel with the system
         NotificationManagerCompat.from(this).createNotificationChannel(channel)
     }
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
+        instanceRef = this
         registerScreenReceiver()
     }
 
@@ -63,11 +62,17 @@ class AutoFreezeService : NotificationListenerService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(lockReceiver)
+        runCatching { unregisterReceiver(lockReceiver) }
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+        if (instanceRef === this) instanceRef = null
     }
 
     companion object {
-        lateinit var instance: AutoFreezeService private set
+        @Volatile
+        private var instanceRef: AutoFreezeService? = null
+
+        /** Null-safe accessor — never throws if service is not running. */
+        val instanceOrNull: AutoFreezeService?
+            get() = instanceRef
     }
 }

@@ -4,7 +4,10 @@
               android:layout_height="wrap_content"
               xmlns:tools="http://schemas.android.com/tools"
               android:background="?selectableItemBackground"
-              android:gravity="center_vertical">
+              android:gravity="center_vertical"
+              android:minHeight="56dp"
+              android:paddingStart="@dimen/padding_extra_small"
+              android:paddingEnd="36dp">
 
     <ImageView
             android:id="@+id/app_icon"
@@ -18,7 +21,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingEnd="@dimen/padding_small">
 
         <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/app_name"
@@ -26,7 +30,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 tools:text="@string/app_name"/>
 
         <com.google.android.material.textview.MaterialTextView
@@ -35,12 +39,15 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="2"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 tools:text="com.aistra.hail"/>
     </LinearLayout>
 
     <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/app_star"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/padding_small"
+            android:clickable="false"
+            android:focusable="false"/>
 </LinearLayout>
