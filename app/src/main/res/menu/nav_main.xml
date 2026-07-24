@@ -12,10 +12,7 @@
         android:id="@+id/nav_settings"
         android:icon="@drawable/ic_settings_selector"
         android:title="@string/title_settings" />
-    <item
-        android:id="@+id/nav_about"
-        android:icon="@drawable/ic_info_selector"
-        android:title="@string/title_about" />
+    <!-- Search sits in former About slot for right-thumb reach -->
     <item
         android:id="@+id/nav_search"
         android:icon="@drawable/ic_outline_search"

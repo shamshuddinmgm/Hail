@@ -1,278 +1,116 @@
-简体中文 | [English](README_EN.md) | [日本語](README_JP.md)
+# Hail Async
 
-# 雹 Hail
+**Freeze apps your way — per-tag modes, premium themes, side-by-side with stock Hail.**
 
-基于 [chaoscreater/Hail](https://github.com/chaoscreater/Hail)（上游 [aistra0528/Hail](https://github.com/aistra0528/Hail)）。
+Fork of [chaoscreater/Hail](https://github.com/chaoscreater/Hail) · upstream [aistra0528/Hail](https://github.com/aistra0528/Hail)
 
-## 本构建新增 (v1.11.0)
+[![Version](https://img.shields.io/badge/version-34.52.09--async-1B6CA8)](#)
+[![Package](https://img.shields.io/badge/id-com.shams.srk.hail-39FF14)](#)
+[![Min SDK](https://img.shields.io/badge/minSdk-23-blue)](#)
+[![License](https://img.shields.io/badge/license-GPL--3.0-lightgrey)](LICENSE)
 
-1. **按标签工作模式** — 设置 → Tag working modes，或长按首页标签。每个标签可单独选择停用/暂停等；该标签页冻结按钮使用对应预设；解冻按应用记录的模式还原。
-2. **搜索悬浮按钮** — 搜索移至冻结按钮旁；添加到桌面快捷方式移至顶栏。
-3. **流畅度** — 限制 ViewPager 预加载页数；冻结/解冻在后台线程执行。
-4. FAB 轻微 Material 抛光（浅色/深色）。
+---
 
-安装说明：包名仍为 `com.aistra.hail`。若替换其他签名的 Hail，请先导出设置。
+## Why Hail Async?
 
-# What's new (from chaoscreater base)
-The base fork includes features beyond stock Hail (v1.10.0), such as:
+| | |
+|---|---|
+| **Side-by-side** | Install next to stock / chaoscreater Hail (`com.shams.srk.hail`) |
+| **Per-tag modes** | Default = Disable, another tag = Suspend — no cross-talk |
+| **Thumb-first chrome** | Freeze FAB + Search on bottom nav; lean toolbar |
+| **Premium themes** | AMOLED, neon sci-fi, dark gray, chocolate, midnight, ember |
+| **Smoother** | Chunked freeze, icon race fixes, nav transitions, 120 Hz prefer |
 
-1. Tags can now be manually reorganized, i.e their position can be changed. Go to Settings page to do this.
-2. Tags now have a longer character limit
-3. You can long press a Tag and assign/unassign that tag to apps easily. There's also a search box that you can use to filter apps quickly. This is much quicker than long pressing an app and tag it one by one.
-4. You can hide certain apps (do this in Settings) so that they never show up on the Apps page
-5. Export/Import is now an option under Settings. You can export/import your list of apps and their tags and whitelist setting.
-6. Under the Apps page, you can now sort apps by Un-added and Added apps. For filter, you can also filter by un-added and added apps.
-7. Under the Apps page, you can now select all and de-select all apps quickly. If you are someone like me who has over 200 apps and you want them to be managed in Hail (either using it as an app launcher, or for freezing/disabling them), then it makes no sense to manually tap each app 200+ times just to add them. It's better to add them all and deselect the few apps you don't want to be included (which btw, can just be excluded in the hide apps Settings).
-8. Fixed the search issue in both Home and Apps page, where the result (based on your keyword) may sometimes be behind the popped up keyboard view. If you try to dismiss the keyboard, it removes the searched keyword, so you can never get to the result.
-9. Quickly see all your whitelisted apps (regardless of the tag category) and lets you batch select the ones you want to freeze. This gives you more granularity than just freezing all whitelisted apps.
-10. Instead of showing "permission denied" for apps that it can't freeze, it now shows the actual app package name so you can troubleshoot better. This is implemented for freezing apps directly in the app, or via API intent call.
-11. Sometimes, it's good to keep the uninstalled app entries because you might later install them and they'll already be added to Hail with the correct tag(s). This is especially useful if you manage multiple devices and share the same Hail config, as one device might have 100 apps installed while the other has only 20, which would mean the other 80 are uninstalled but still show up in Hail due to the same config being used. Seeing uninstalled app entries can be annoying sometimes, so now there's a toggle option to hide them.
-12. Performance improvements when switching between tag categories, especially on tablets. Can instantly jump to the tag category all the way to the left or right without the loading animation delay.
-13. Added a Home button to jump to the Default page.
-14. Added support to add multiple apps to your launcher's home screen. These apps can be predefined and will be included in your export/import settings. For example, let's say you have 100 apps and you want to add 50 of them to your launcher's home screen. You can select them and the next time you migrate to a new phone, you can just import your Hail settings and they'll all be ticked. Then, just add to home screen in one go.
-15. You can now launch and freeze an app using the same shortcut that you've added to the home launcher. You must first enable the prompt in the Hail settings, then add an app in Hail to the home launcher and launch it. The freezing of the app will just for that app, not for any other apps. Note that if you launch a Hail app via adb command (adb shell am start -a com.aistra.hail.action.LAUNCH -e package XYZ), it will still just launch fine without a prompt. The prompt is only for manual user app launches.
-16. When you add an Hail app shortcut to your home launcher, you can now specify a prerequisite app to enable or launch. For example, some apps rely on Play Store being enabled to work. If you're like me who likes to disable apps (for privacy and battery-saving reasons), then it's a pain trying to remember to enable Play Store for certain apps, or else they won't work. Now, you can just launch those apps and Play Store will be enabled as a prerequisite app automatically.
-17. You can now systematically add/remove an app to/from whitelist.
+---
 
-  - Whitelist an app (must already be on Home)
-    <br>
-    adb shell am start -a com.aistra.hail.action.ADD_WHITELIST -e package com.example.app
+## Features we added / improved
 
-  - Remove whitelist status (app stays on Home)
-    <br>
-    adb shell am start -a com.aistra.hail.action.REMOVE_WHITELIST -e package com.example.app
+### Working modes & tags
+- Per-tag working mode presets (Settings + long-press tag)
+- Freeze FAB uses **current tag** mode (shows short label: Dis / Sus / Hide / …)
+- Unfreeze only reverses the **same mode family** (Suspend ≠ Enable)
+- `frozenMode` remembered per app for correct restore / export
 
+### Home & Apps UX
+- Bottom nav: **Home · Apps · Settings · Search** (About moved into Settings)
+- Toolbar: Home / Whitelist / Search / Multiselect · Shortcuts in ⋮
+- Row tap on Apps selects/deselects (checkbox clear of fast-scroll)
+- Search Enter launches top result (unfreeze + launch)
+- Fast-scroll slider on Apps (non-overlapping)
+- Panel transitions (fade / slide)
 
-# Download link here:
-https://github.com/chaoscreater/Hail/blob/master/app/build/outputs/apk/release/Hail-v1.10.0-glocal.apk
+### Themes
+- Follow system · Light · Dark
+- AMOLED Black · Dark Gray · Chocolate Brown · Midnight Navy · Ember Forge
+- Neon Hacker · Neon Cybertron · Neon Plasma · Neon Ice  
+  Theme-aware fonts, shapes, nav accents, Compose Settings look
 
-<br>
-<br>
+### Stability & system
+- Post-unfreeze icons no longer stuck grey (`FLAG_STOPPED` false positive fixed)
+- Launch crash harden (HyperOS theme / display)
+- Boot restore for AutoFreeze **only if** user enabled freeze-after-lock
+- Safer `AutoFreezeService` accessor · fast-scroll leak detach
 
+### Identity
+| | |
+|---|---|
+| App name | **Hail Async** |
+| Package | `com.shams.srk.hail` |
+| Version | `34.52.09-async` |
+| Deep links | `hailasync://…` |
 
-雹是一款用于冻结 Android 应用的自由软件
+---
 
-<img src="fastlane/metadata/android/zh-CN/images/phoneScreenshots/1.png" width="32%" /> <img src="fastlane/metadata/android/zh-CN/images/phoneScreenshots/2.png" width="32%" /> <img src="fastlane/metadata/android/zh-CN/images/phoneScreenshots/3.png" width="32%" />
+## Download
 
-## 冻结
+Release APK (when published): see **[Releases](../../releases)**.
 
-冻结`freeze`是一个营销用语，用于描述使**应用在用户不需要时不可运行**
-的行为，以此控制设备使用、减少内存占用和节省电量。用户可在需要时解冻`unfreeze`应用。
+Sideload debug/release builds from CI or local:
 
-在一般情况下，“冻结”是指停用，此外雹也可以通过隐藏和暂停来“冻结”应用。
-
-### 停用
-
-被停用`disable`的应用不会出现在启动器中。在已安装应用列表中会显示已停用`disabled`状态。启用`enable`应用即可恢复。
-
-### 隐藏
-
-被隐藏`hide`的应用不会出现在启动器和已安装应用列表中。取消隐藏`unhide`应用即可恢复。
-
-> 在这种状态下，软件包几乎处于卸载状态，无法使用，但并没有删除数据或实际的软件包文件。
-
-### 暂停 (Android 7.0+)
-
-被暂停`suspend`的应用在启动器中会显示为灰度图标。取消暂停`unsuspend`应用即可恢复。
-
-> 在这种状态下，应用程序的通知将被隐藏，任何启动活动将被停止，不能弹出提示、对话框或播放音频。
-> 当用户试图启动一个暂停的应用程序时，系统将向用户显示一个对话框，告知他们在暂停状态下不能使用这个应用程序。
-
-暂停只会阻止用户与应用交互，而**不会**阻止应用在后台运行。
-
-## 工作模式
-
-**冻结的应用需要通过相同工作模式解冻。**
-
-1. 如果您的设备支持无线调试 (Android 11+) 或已 root，推荐选择`Shizuku`。
-
-2. 如果您的设备已 root，可选择`Root`。**此模式速度相对较慢。**
-
-| 授权方式                                                                                           | 强行停止 | 停用 | 隐藏 | 暂停 | 卸载/重新安装（系统应用） |
-|------------------------------------------------------------------------------------------------|------|----|----|----|---------------|
-| Root                                                                                           | ✓    | ✓  | ✓  | ✓  | ✓             |
-| 设备所有者                                                                                          | ✗    | ✗  | ✓  | ✓  | ✗             |
-| 特权系统应用                                                                                         | ✓    | ✓  | ✗  | ✗  | ✗             |
-| [Shizuku](https://github.com/RikkaApps/Shizuku) (root)/[Sui](https://github.com/RikkaApps/Sui) | ✓    | ✓  | ✓  | ✓  | ✓             |
-| [Shizuku](https://github.com/RikkaApps/Shizuku) (adb)                                          | ✓    | ✓  | ✗  | ✓  | ✓             |
-| [Dhizuku](https://github.com/iamr0s/Dhizuku)                                                   | ✗    | ✗  | ✓  | ✓  | ✗             |
-| [炼妖壶](https://github.com/oasisfeng/island)/[Insular](https://gitlab.com/secure-system/Insular) | ✗    | ✗  | ✓  | ✓  | ✗             |
-
-### 设备所有者
-
-**设置为设备所有者的应用需要移除设备所有者后方可卸载。**
-
-#### 通过 adb 将雹设置为设备所有者
-
-[Android 调试桥 (adb) 指南](https://developer.android.google.cn/studio/command-line/adb)
-
-[下载 Android SDK 平台工具](https://developer.android.google.cn/studio/releases/platform-tools)
-
-通过 adb 发出命令：
-
-```shell
-adb shell dpm set-device-owner com.aistra.hail/.receiver.DeviceAdminReceiver
+```text
+Hail-v34.52.09-async.apk
 ```
 
-设置成功后会输出以下信息：
+> **Note:** New package id = fresh install. Export settings from your previous Hail+ build before switching.
 
-```
-Success: Device owner set to package com.aistra.hail
-Active admin set to component {com.aistra.hail/com.aistra.hail.receiver.DeviceAdminReceiver}
-```
+---
 
-如输出其他信息，请使用搜索引擎自行查阅与解决。
+## Working modes (Shizuku / root / owner / …)
 
-#### 移除雹的设备所有者
+Same freeze backends as upstream Hail:
 
-设置 > 移除设备所有者
+- **Disable** · **Hide** · **Suspend** · **Stop**
+- Privileges: Shizuku, Root (SU), Device Owner, Dhizuku, Island, Privileged
 
-### 特权系统应用
+Per-tag presets let you mix (e.g. user apps Disable, system apps Suspend on HyperOS).
 
-需要设置特许权限许可名单：
+---
 
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<permissions>
-    <privapp-permissions package="com.aistra.hail">
-        <permission name="android.permission.PACKAGE_USAGE_STATS"/>
-        <permission name="android.permission.FORCE_STOP_PACKAGES"/>
-        <permission name="android.permission.CHANGE_COMPONENT_ENABLED_STATE"/>
-        <permission name="android.permission.MANAGE_APP_OPS_MODES"/>
-    </privapp-permissions>
-</permissions>
-```
+## Screenshots
 
-并将雹安装为特权系统应用。
+Add device screenshots under `fastlane/metadata/` or Releases as you capture them.
 
-推荐方法是在构建 ROM 时导入雹，`Android.bp`配置示例：
+---
 
-```bp
-android_app_import {
-    name: "Hail",
-    apk: "Hail.apk",
-    privileged: true,
+## Build
 
-    dex_preopt: {
-        enabled: false,
-    },
-    presigned: true,
-    preprocessed: true,
-
-    required: ["privapp-permissions_com.aistra.hail.xml"]
-}
-
-prebuilt_etc {
-    name: "privapp-permissions_com.aistra.hail.xml",
-    src: "privapp-permissions.xml",
-    sub_dir: "permissions",
-}
+```bash
+./gradlew :app:assembleRelease
+# APK → app/build/outputs/apk/release/Hail-v34.52.09-async.apk
 ```
 
-## 恢复
+JDK 17 · Android SDK 36
 
-### 通过 adb
+---
 
-替换 com.package.name 为目标应用的包名。
+## Credits
 
-```shell
-# 启用应用
-adb shell pm enable com.package.name
-# 取消隐藏应用 (需要 root)
-adb shell su -c pm unhide com.package.name
-# 取消暂停应用
-adb shell pm unsuspend com.package.name
-```
+- [aistra0528/Hail](https://github.com/aistra0528/Hail) — original
+- [chaoscreater/Hail](https://github.com/chaoscreater/Hail) — QoL base
+- Hail Async — packaging, tag modes, themes, UX & stability work on this fork
 
-### 修改文件
+---
 
-访问`/data/system/users/0/package-restrictions.xml`，此文件存储了应用限制相关信息。您可修改、重命名或直接删除此文件。
+## License
 
-- 启用应用：修改`enabled`属性为 2 (DISABLED) 或 3 (DISABLED_USER) 的值为 1 (ENABLED)
-
-- 取消隐藏应用：修改`hidden`属性为 true 的值为 false
-
-- 取消暂停应用：修改`suspended`属性为 true 的值为 false
-
-### 通过恢复模式清除数据 (wipe data)
-
-**希望您能谨慎地选择冻结应用，以免陷入此窘境。**
-
-## API
-
-```shell
-adb shell am start -a action -e key value
-```
-
-`action`可为：
-
-- `com.aistra.hail.action.LAUNCH`：解冻并启动目标应用。应用未冻结时会直接启动。`key="package"` `value="com.package.name"`
-
-- `com.aistra.hail.action.FREEZE`：冻结目标应用。应用需处于首页。`key="package"` `value="com.package.name"`
-
-- `com.aistra.hail.action.UNFREEZE`：解冻目标应用。`key="package"` `value="com.package.name"`
-
-- `com.aistra.hail.action.FREEZE_TAG`：冻结目标标签中的全部非白名单应用。`key="tag"` `value="标签名"`
-
-- `com.aistra.hail.action.UNFREEZE_TAG`：解冻目标标签中的全部应用。`key="tag"` `value="标签名"`
-
-- `com.aistra.hail.action.FREEZE_ALL`：冻结首页全部应用。无需`extra`。
-
-- `com.aistra.hail.action.UNFREEZE_ALL`：解冻首页全部应用。无需`extra`。
-
-- `com.aistra.hail.action.FREEZE_NON_WHITELISTED`：冻结首页全部非白名单应用。无需`extra`。
-
-- `com.aistra.hail.action.FREEZE_AUTO`：自动冻结首页应用。无需`extra`。
-
-- `com.aistra.hail.action.LOCK`：锁定屏幕。无需`extra`。
-
-- `com.aistra.hail.action.LOCK_FREEZE`：冻结首页全部应用并锁定屏幕。无需`extra`。
-
-或使用以下`schema`:
-
-- `hail://launch?package=xxx`
-
-- `hail://freeze?package=xxx`
-
-- `hail://unfreeze?package=xxx`
-
-- `hail://freeze_tag?tag=xxx`
-
-- `hail://unfreeze_tag?tag=xxx`
-
-- `hail://freeze_all`
-
-- `hail://unfreeze_all`
-
-- `hail://freeze_non_whitelisted`
-
-- `hail://freeze_auto`
-
-- `hail://lock`
-
-- `hail://lock_freeze`
-
-## 协助翻译
-
-要将雹翻译成您的语言，或完善现有的翻译，请使用 [Weblate](https://hosted.weblate.org/engage/hail/)。
-
-[![翻译状态](https://hosted.weblate.org/widgets/hail/-/multi-auto.svg)](https://hosted.weblate.org/engage/hail/)
-
-## 许可证
-
-    Hail - Freeze Android apps
-    Copyright (C) 2021-2026 Aistra
-    Copyright (C) 2022-2026 Hail contributors
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+GNU General Public License v3.0 — see [LICENSE](LICENSE).

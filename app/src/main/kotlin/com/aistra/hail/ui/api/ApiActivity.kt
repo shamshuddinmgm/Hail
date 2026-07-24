@@ -94,19 +94,19 @@ class ApiActivity : ComponentActivity() {
     /**
      * Handle schema actions
      *
-     * hailplus://launch?package=xxx
-     * hailplus://freeze?package=xxx
-     * hailplus://unfreeze?package=xxx
-     * hailplus://freeze_tag?tag=xxx
-     * hailplus://unfreeze_tag?tag=xxx
-     * hailplus://freeze_all
-     * hailplus://unfreeze_all
-     * hailplus://freeze_non_whitelisted
-     * hailplus://freeze_auto
-     * hailplus://lock
-     * hailplus://lock_freeze
-     * hailplus://add_whitelist?package=xxx[&tag=xxx]
-     * hailplus://remove_whitelist?package=xxx
+     * hailasync://launch?package=xxx
+     * hailasync://freeze?package=xxx
+     * hailasync://unfreeze?package=xxx
+     * hailasync://freeze_tag?tag=xxx
+     * hailasync://unfreeze_tag?tag=xxx
+     * hailasync://freeze_all
+     * hailasync://unfreeze_all
+     * hailasync://freeze_non_whitelisted
+     * hailasync://freeze_auto
+     * hailasync://lock
+     * hailasync://lock_freeze
+     * hailasync://add_whitelist?package=xxx[&tag=xxx]
+     * hailasync://remove_whitelist?package=xxx
      */
     private fun handleSchema(uri: Uri?): Boolean {
         if (uri?.scheme != "hail") throw IllegalArgumentException("Unknown scheme:\n${uri?.scheme}")

@@ -14,22 +14,21 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.shamshuddinmgm.hail"
+        applicationId = "com.shams.srk.hail"
         minSdk = 23
         targetSdk = 36
-        versionCode = 40
-        versionName = "1.15.0"
+        // Format: 34.52.<revision>-async  (revision = feature pushes/commits on this fork)
+        versionCode = 345209
+        versionName = "34.52.09-async"
     }
 
     buildTypes {
         debug {
-            // applicationIdSuffix removed so debug builds use com.aistra.hail
-            versionNameSuffix = "-g$commitHash"
+            versionNameSuffix = "-debug"
         }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            if (!commitSubject.startsWith("[release]")) versionNameSuffix = "-g$commitHash"
             signingConfig = if (signingProps.exists()) {
                 val props = `java.util`.Properties().apply { load(signingProps.reader()) }
                 signingConfigs.create("release") {

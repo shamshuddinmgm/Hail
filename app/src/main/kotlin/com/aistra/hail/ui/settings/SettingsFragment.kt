@@ -38,6 +38,7 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.aistra.hail.HailApp.Companion.app
 import com.aistra.hail.R
 import com.aistra.hail.app.AppManager
@@ -332,6 +333,15 @@ class SettingsFragment : MainFragment(), MenuProvider {
                 HShortcuts.removeAllDynamicShortcuts()
                 HShortcuts.addDynamicShortcutAction(HailData.dynamicShortcutAction)
             }
+            horizontalDivider()
+            preferenceCategory(key = "about_cat", title = { Text(text = stringResource(R.string.title_about)) })
+            preference(
+                key = "open_about",
+                title = { Text(text = stringResource(R.string.title_about)) },
+                summary = { Text(text = stringResource(R.string.about_preference_summary)) },
+                icon = { Icon(imageVector = Icons.Outlined.Info, contentDescription = null) },
+                onClick = { findNavController().navigate(R.id.nav_about) }
+            )
         }
     }
 
