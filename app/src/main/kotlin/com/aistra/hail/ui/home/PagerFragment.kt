@@ -157,6 +157,13 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
         item.expandActionView()
     }
 
+    fun forceIconRefresh() {
+        if (!isAdded || _binding == null) return
+        pagerAdapter.invalidateContentFlags()
+        updateCurrentList()
+        pagerAdapter.notifyDataSetChanged()
+    }
+
     private fun updateFreezeFabLabel() {
         val mode = HailData.workingModeForTag(tag.id)
         val short = HailData.workingModeShortLabel(mode)
@@ -579,24 +586,53 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
         updateList: Boolean = true,
         preferredTagId: Int? = null
     ) {
-        val appsWithModes = list.map { info ->
-            val mode = if (frozen) {
-                HailData.workingModeForApp(info, preferredTagId ?: tag.id)
+        val scopeTagId = preferredTagId ?: tag.id
+        val scopeMode = HailData.workingModeForTag(scopeTagId)
+        val scopeAction = HailData.modeAction(scopeMode)
+
+        val appsWithModes = list.mapNotNull { info ->
+            if (frozen) {
+                val mode = HailData.workingModeForApp(info, scopeTagId)
+                val existing = info.frozenMode?.takeIf { it.isNotEmpty() }
+                // Do not re-freeze an app already held by a different mode family (e.g. Disable vs Suspend)
+                if (existing != null &&
+                    AppManager.isAppFrozen(info.packageName, existing) &&
+                    !HailData.modesCompatible(existing, mode)
+                ) {
+                    return@mapNotNull null
+                }
+                info to mode
             } else {
-                info.frozenMode?.takeIf { it.isNotEmpty() }
-                    ?: HailData.workingModeForApp(info, preferredTagId ?: tag.id)
+                val stored = info.frozenMode?.takeIf { it.isNotEmpty() }
+                when {
+                    stored != null -> {
+                        if (scopeAction != null && !HailData.modesCompatible(stored, scopeMode)) null
+                        else info to stored
+                    }
+                    // Legacy apps with no frozenMode: only touch if frozen via this tag's mode
+                    scopeAction != null -> {
+                        if (AppManager.isAppFrozen(info.packageName, scopeMode)) info to scopeMode
+                        else null
+                    }
+                    else -> info to HailData.workingModeForApp(info, scopeTagId)
+                }
             }
-            info to mode
         }
         val modesUsed = appsWithModes.map { it.second }.distinct()
         if (modesUsed.any { it == HailData.MODE_DEFAULT } ||
             (appsWithModes.isEmpty() && HailData.workingMode == HailData.MODE_DEFAULT)
         ) {
-            if (HailData.workingMode == HailData.MODE_DEFAULT && appsWithModes.all { it.second == HailData.MODE_DEFAULT }) {
+            if (HailData.workingMode == HailData.MODE_DEFAULT &&
+                (appsWithModes.isEmpty() || appsWithModes.all { it.second == HailData.MODE_DEFAULT })
+            ) {
                 MaterialAlertDialogBuilder(activity).setMessage(R.string.msg_guide)
                     .setPositiveButton(android.R.string.ok, null).show()
                 return
             }
+        }
+        if (appsWithModes.isEmpty()) {
+            HUI.showToast(if (frozen) R.string.msg_freeze else R.string.msg_unfreeze, "0")
+            return
         }
         if (modesUsed.any { it == HailData.MODE_SHIZUKU_HIDE }) {
             runCatching { HShizuku.isRoot }.onSuccess {
@@ -621,8 +657,12 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
                 )
                 else -> {
                     if (updateList) {
-                        pagerAdapter.invalidateContentFlags()
-                        updateCurrentList()
+                        (parentFragment as? HomeFragment)?.refreshAllPagers()
+                            ?: run {
+                                pagerAdapter.invalidateContentFlags()
+                                updateCurrentList()
+                                pagerAdapter.notifyDataSetChanged()
+                            }
                     }
                     HUI.showToast(
                         if (frozen) R.string.msg_freeze else R.string.msg_unfreeze, result
@@ -1138,7 +1178,11 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             }
 
             override fun onQueryTextSubmit(query: String): Boolean {
-                searchView.clearFocus()  // dismiss keyboard without collapsing
+                searchView.clearFocus()
+                // Enter launches the top search hit (unfreeze + launch), same as tapping an icon
+                pagerAdapter.currentList.firstOrNull { it.applicationInfo != null }?.let {
+                    launchApp(it.packageName)
+                }
                 return true
             }
         })

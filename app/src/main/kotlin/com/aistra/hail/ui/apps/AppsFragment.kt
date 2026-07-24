@@ -96,9 +96,18 @@ class AppsFragment : MainFragment(), AppsAdapter.OnItemClickListener, AppsAdapte
             activity.appbar.setLiftOnScrollTargetView(this)
             layoutManager = GridLayoutManager(activity, resources.getInteger(R.integer.apps_span))
             adapter = appsAdapter
+            setHasFixedSize(true)
+            setItemViewCacheSize(20)
+            itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator().apply {
+                addDuration = 120
+                removeDuration = 100
+                moveDuration = 140
+                changeDuration = 100
+            }
             applyDefaultInsetter { paddingRelative(isRtl, bottom = isLandscape) }
             registerForContextMenu(this)
         }
+        binding.fastScroll.attachTo(binding.recyclerView)
 
         model.isRefreshing.observe(viewLifecycleOwner) {
             binding.refresh.isRefreshing = it

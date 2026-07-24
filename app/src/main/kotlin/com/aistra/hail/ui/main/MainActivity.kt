@@ -24,6 +24,7 @@ import com.aistra.hail.databinding.ActivityMainBinding
 import com.aistra.hail.extensions.*
 import com.aistra.hail.ui.home.HomeFragment
 import com.aistra.hail.utils.HPolicy
+import com.aistra.hail.utils.HTheme
 import com.aistra.hail.utils.HUI
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -38,7 +39,9 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
     private lateinit var navHostFragment: NavHostFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        HTheme.applyActivityTheme(this)
         super.onCreate(savedInstanceState)
+        HTheme.enableHighRefreshRate(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         val binding = initView()
         if (!HailData.biometricLogin || BiometricManager.from(this)

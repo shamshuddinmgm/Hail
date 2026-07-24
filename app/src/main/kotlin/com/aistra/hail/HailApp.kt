@@ -14,6 +14,7 @@ import com.aistra.hail.app.HailData
 import com.aistra.hail.services.AutoFreezeService
 import com.aistra.hail.utils.HDhizuku
 import com.aistra.hail.utils.HTarget
+import com.aistra.hail.utils.HTheme
 
 class HailApp : Application() {
     override fun onCreate() {
@@ -47,20 +48,22 @@ class HailApp : Application() {
     }
 
     fun setAppTheme(theme: String) {
-        if (HTarget.S) getSystemService<UiModeManager>()!!.setApplicationNightMode(
-            when (theme) {
-                HailData.THEME_LIGHT -> UiModeManager.MODE_NIGHT_NO
-                HailData.THEME_DARK -> UiModeManager.MODE_NIGHT_YES
-                else -> UiModeManager.MODE_NIGHT_AUTO
-            }
-        )
-        else AppCompatDelegate.setDefaultNightMode(
-            when (theme) {
-                HailData.THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
-                HailData.THEME_DARK -> AppCompatDelegate.MODE_NIGHT_YES
-                else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-            }
-        )
+        val nightMode = when {
+            theme == HailData.THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            HTheme.isForcedDark(theme) -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        if (HTarget.S) {
+            getSystemService<UiModeManager>()!!.setApplicationNightMode(
+                when (nightMode) {
+                    AppCompatDelegate.MODE_NIGHT_NO -> UiModeManager.MODE_NIGHT_NO
+                    AppCompatDelegate.MODE_NIGHT_YES -> UiModeManager.MODE_NIGHT_YES
+                    else -> UiModeManager.MODE_NIGHT_AUTO
+                }
+            )
+        } else {
+            AppCompatDelegate.setDefaultNightMode(nightMode)
+        }
     }
 
 

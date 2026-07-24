@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AMOLED pure black -->
+    <color name="amoled_primary">#7CDBFF</color>
+    <color name="amoled_onPrimary">#003546</color>
+    <color name="amoled_primaryContainer">#004D64</color>
+    <color name="amoled_onPrimaryContainer">#C2E8FF</color>
+    <color name="amoled_secondary">#B1CAD6</color>
+    <color name="amoled_onSecondary">#1C343D</color>
+    <color name="amoled_secondaryContainer">#334A54</color>
+    <color name="amoled_onSecondaryContainer">#CDE6F2</color>
+    <color name="amoled_tertiary">#BCC6EA</color>
+    <color name="amoled_onTertiary">#25304A</color>
+    <color name="amoled_tertiaryContainer">#3C465F</color>
+    <color name="amoled_onTertiaryContainer">#DAE2FF</color>
+    <color name="amoled_background">#000000</color>
+    <color name="amoled_onBackground">#E1E3E5</color>
+    <color name="amoled_surface">#000000</color>
+    <color name="amoled_onSurface">#E1E3E5</color>
+    <color name="amoled_surfaceVariant">#40484C</color>
+    <color name="amoled_onSurfaceVariant">#C0C8CC</color>
+    <color name="amoled_outline">#8A9296</color>
+    <color name="amoled_outlineVariant">#40484C</color>
+    <color name="amoled_surfaceContainer">#0A0A0A</color>
+    <color name="amoled_surfaceContainerHigh">#141414</color>
+    <color name="amoled_surfaceContainerHighest">#1C1C1C</color>
+
+    <!-- Neon Hacker — matrix green -->
+    <color name="hacker_primary">#39FF14</color>
+    <color name="hacker_onPrimary">#003300</color>
+    <color name="hacker_primaryContainer">#0B5C0B</color>
+    <color name="hacker_onPrimaryContainer">#B8FFB0</color>
+    <color name="hacker_secondary">#7CFF9B</color>
+    <color name="hacker_onSecondary">#00391A</color>
+    <color name="hacker_secondaryContainer">#00522A</color>
+    <color name="hacker_onSecondaryContainer">#9AFFB8</color>
+    <color name="hacker_tertiary">#00E5FF</color>
+    <color name="hacker_onTertiary">#003640</color>
+    <color name="hacker_tertiaryContainer">#004E5A</color>
+    <color name="hacker_onTertiaryContainer">#A5EFFF</color>
+    <color name="hacker_background">#050A05</color>
+    <color name="hacker_onBackground">#D4FFD4</color>
+    <color name="hacker_surface">#080F08</color>
+    <color name="hacker_onSurface">#D4FFD4</color>
+    <color name="hacker_surfaceVariant">#1A2E1A</color>
+    <color name="hacker_onSurfaceVariant">#A8D4A8</color>
+    <color name="hacker_outline">#4A7A4A</color>
+    <color name="hacker_outlineVariant">#1A2E1A</color>
+    <color name="hacker_surfaceContainer">#0C160C</color>
+    <color name="hacker_surfaceContainerHigh">#122012</color>
+    <color name="hacker_surfaceContainerHighest">#1A2C1A</color>
+
+    <!-- Neon Cybertron — cyan / hot magenta -->
+    <color name="cyber_primary">#00F0FF</color>
+    <color name="cyber_onPrimary">#00363A</color>
+    <color name="cyber_primaryContainer">#004F55</color>
+    <color name="cyber_onPrimaryContainer">#90F5FF</color>
+    <color name="cyber_secondary">#FF2BD6</color>
+    <color name="cyber_onSecondary">#3B0030</color>
+    <color name="cyber_secondaryContainer">#61004F</color>
+    <color name="cyber_onSecondaryContainer">#FFD7EF</color>
+    <color name="cyber_tertiary">#FFB86B</color>
+    <color name="cyber_onTertiary">#3B2100</color>
+    <color name="cyber_tertiaryContainer">#563200</color>
+    <color name="cyber_onTertiaryContainer">#FFDDB8</color>
+    <color name="cyber_background">#070812</color>
+    <color name="cyber_onBackground">#E0E6FF</color>
+    <color name="cyber_surface">#0A0C1A</color>
+    <color name="cyber_onSurface">#E0E6FF</color>
+    <color name="cyber_surfaceVariant">#1E2440</color>
+    <color name="cyber_onSurfaceVariant">#B8C0E0</color>
+    <color name="cyber_outline">#5A6490</color>
+    <color name="cyber_outlineVariant">#1E2440</color>
+    <color name="cyber_surfaceContainer">#101428</color>
+    <color name="cyber_surfaceContainerHigh">#161C34</color>
+    <color name="cyber_surfaceContainerHighest">#1E2644</color>
+
+    <!-- Neon Plasma — violet / pink -->
+    <color name="plasma_primary">#C77DFF</color>
+    <color name="plasma_onPrimary">#2D0050</color>
+    <color name="plasma_primaryContainer">#4A0080</color>
+    <color name="plasma_onPrimaryContainer">#EFD0FF</color>
+    <color name="plasma_secondary">#FF6BCB</color>
+    <color name="plasma_onSecondary">#3B0028</color>
+    <color name="plasma_secondaryContainer">#610044</color>
+    <color name="plasma_onSecondaryContainer">#FFD0E8</color>
+    <color name="plasma_tertiary">#7B61FF</color>
+    <color name="plasma_onTertiary">#1A0060</color>
+    <color name="plasma_tertiaryContainer">#3200A0</color>
+    <color name="plasma_onTertiaryContainer">#E0D8FF</color>
+    <color name="plasma_background">#0C0614</color>
+    <color name="plasma_onBackground">#F0E6FF</color>
+    <color name="plasma_surface">#12081C</color>
+    <color name="plasma_onSurface">#F0E6FF</color>
+    <color name="plasma_surfaceVariant">#2A1A3A</color>
+    <color name="plasma_onSurfaceVariant">#D0B8E8</color>
+    <color name="plasma_outline">#7A5A9A</color>
+    <color name="plasma_outlineVariant">#2A1A3A</color>
+    <color name="plasma_surfaceContainer">#180C24</color>
+    <color name="plasma_surfaceContainerHigh">#201030</color>
+    <color name="plasma_surfaceContainerHighest">#2A1840</color>
+
+    <!-- Neon Ice — arctic blue -->
+    <color name="ice_primary">#7DF9FF</color>
+    <color name="ice_onPrimary">#00363A</color>
+    <color name="ice_primaryContainer">#005055</color>
+    <color name="ice_onPrimaryContainer">#B8FBFF</color>
+    <color name="ice_secondary">#A8C8FF</color>
+    <color name="ice_onSecondary">#002F5A</color>
+    <color name="ice_secondaryContainer">#004680</color>
+    <color name="ice_onSecondaryContainer">#D4E4FF</color>
+    <color name="ice_tertiary">#E8F4FF</color>
+    <color name="ice_onTertiary">#1A3040</color>
+    <color name="ice_tertiaryContainer">#2A4050</color>
+    <color name="ice_onTertiaryContainer">#E8F4FF</color>
+    <color name="ice_background">#050A10</color>
+    <color name="ice_onBackground">#E2F0FF</color>
+    <color name="ice_surface">#081018</color>
+    <color name="ice_onSurface">#E2F0FF</color>
+    <color name="ice_surfaceVariant">#1A2838</color>
+    <color name="ice_onSurfaceVariant">#B0C8DC</color>
+    <color name="ice_outline">#5A7890</color>
+    <color name="ice_outlineVariant">#1A2838</color>
+    <color name="ice_surfaceContainer">#0C1520</color>
+    <color name="ice_surfaceContainerHigh">#121C28</color>
+    <color name="ice_surfaceContainerHighest">#1A2838</color>
+</resources>

@@ -17,8 +17,8 @@ android {
         applicationId = "com.shamshuddinmgm.hail"
         minSdk = 23
         targetSdk = 36
-        versionCode = 36
-        versionName = "1.12.0"
+        versionCode = 37
+        versionName = "1.13.0"
     }
 
     buildTypes {

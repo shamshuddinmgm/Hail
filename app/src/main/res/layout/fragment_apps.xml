@@ -5,10 +5,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.aistra.hail.views.HRecyclerView
-        android:id="@+id/recycler_view"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        tools:listitem="@layout/item_apps" />
+        android:layout_height="match_parent">
+
+        <com.aistra.hail.views.HRecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:scrollbars="none"
+            tools:listitem="@layout/item_apps" />
+
+        <com.aistra.hail.views.FastScrollSlider
+            android:id="@+id/fast_scroll"
+            android:layout_width="28dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:contentDescription="@string/fast_scroll" />
+    </FrameLayout>
 </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

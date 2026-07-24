@@ -104,7 +104,21 @@ object HailData {
     const val FOLLOW_SYSTEM = "follow_system"
     const val THEME_LIGHT = "theme_light"
     const val THEME_DARK = "theme_dark"
-    val APP_THEME_VALUES = listOf(FOLLOW_SYSTEM, THEME_LIGHT, THEME_DARK)
+    const val THEME_AMOLED = "theme_amoled"
+    const val THEME_NEON_HACKER = "theme_neon_hacker"
+    const val THEME_NEON_CYBER = "theme_neon_cyber"
+    const val THEME_NEON_PLASMA = "theme_neon_plasma"
+    const val THEME_NEON_ICE = "theme_neon_ice"
+    val APP_THEME_VALUES = listOf(
+        FOLLOW_SYSTEM,
+        THEME_LIGHT,
+        THEME_DARK,
+        THEME_AMOLED,
+        THEME_NEON_HACKER,
+        THEME_NEON_CYBER,
+        THEME_NEON_PLASMA,
+        THEME_NEON_ICE
+    )
     const val ICON_PACK = "icon_pack"
     const val GRAYSCALE_ICON = "grayscale_icon"
     const val COMPACT_ICON = "compact_icon"
@@ -305,6 +319,23 @@ object HailData {
     /** Mode used when freezing apps on a specific tag tab (FAB / freeze visible). */
     fun workingModeForTag(tagId: Int): String =
         tagById(tagId)?.resolvedWorkingMode() ?: workingMode
+
+    /** Freeze-action family: disable / suspend / hide / stop (ignores privilege backend). */
+    fun modeAction(mode: String?): String? = when {
+        mode.isNullOrEmpty() || mode == MODE_DEFAULT -> null
+        mode.endsWith(DISABLE) -> DISABLE
+        mode.endsWith(SUSPEND) -> SUSPEND
+        mode.endsWith(HIDE) -> HIDE
+        mode.endsWith(STOP) -> STOP
+        else -> null
+    }
+
+    /** True when both modes freeze/unfreeze the same package state (e.g. both Suspend). */
+    fun modesCompatible(a: String?, b: String?): Boolean {
+        val left = modeAction(a) ?: return false
+        val right = modeAction(b) ?: return false
+        return left == right
+    }
 
     /**
      * Mode for an app when freeze-all / multi-tag actions run.

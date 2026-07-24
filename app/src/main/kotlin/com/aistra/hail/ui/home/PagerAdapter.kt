@@ -111,6 +111,9 @@ class PagerAdapter(
 }
 
 private fun AppInfo.getFlag(selectedList: List<AppInfo>) =
-    (1 shl state.ordinal) or (this in selectedList).shl(3) or whitelisted.shl(4)
+    (1 shl state.ordinal) or
+            (this in selectedList).shl(3) or
+            whitelisted.shl(4) or
+            ((frozenMode?.hashCode() ?: 0) and 0x7FFFFF).shl(5)
 
 private fun Boolean.shl(bitCount: Int) = if (this) 1 shl bitCount else 0

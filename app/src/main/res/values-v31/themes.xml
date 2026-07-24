@@ -1,4 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- Custom themes applied via HTheme; dynamic colors only for Follow system. -->
     <style name="Theme.Hail" parent="Theme.Base"/>
 </resources>

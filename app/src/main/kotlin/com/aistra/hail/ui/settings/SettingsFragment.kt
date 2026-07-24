@@ -130,6 +130,7 @@ class SettingsFragment : MainFragment(), MenuProvider {
                 defaultValue = HailData.FOLLOW_SYSTEM,
                 onValueChange = { _, value ->
                     app.setAppTheme(value)
+                    requireActivity().recreate()
                     true
                 },
                 values = HailData.APP_THEME_VALUES,

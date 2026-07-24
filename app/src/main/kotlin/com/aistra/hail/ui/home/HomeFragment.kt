@@ -112,6 +112,10 @@ class HomeFragment : MainFragment() {
         (childFragmentManager.findFragmentByTag("f$pos") as? PagerFragment)?.expandSearch()
     }
 
+    fun refreshAllPagers() {
+        childFragmentManager.fragments.filterIsInstance<PagerFragment>().forEach { it.forceIconRefresh() }
+    }
+
     fun showPinShortcutsDialog() {
         val allApps = HailData.checkedList
             .filter { it.applicationInfo != null }

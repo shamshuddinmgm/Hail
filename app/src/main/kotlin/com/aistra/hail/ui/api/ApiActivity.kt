@@ -339,16 +339,35 @@ class ApiActivity : ComponentActivity() {
         skipWhitelisted: Boolean = false,
         preferredTagId: Int? = null
     ) {
+        val scopeMode = preferredTagId?.let { HailData.workingModeForTag(it) } ?: HailData.workingMode
+        val scopeAction = HailData.modeAction(scopeMode)
         val appsWithModes = list
             .filter { !(skipWhitelisted && it.whitelisted) }
-            .map { info ->
-                val mode = if (frozen) {
-                    HailData.workingModeForApp(info, preferredTagId)
+            .mapNotNull { info ->
+                if (frozen) {
+                    val mode = HailData.workingModeForApp(info, preferredTagId)
+                    val existing = info.frozenMode?.takeIf { it.isNotEmpty() }
+                    if (existing != null &&
+                        AppManager.isAppFrozen(info.packageName, existing) &&
+                        !HailData.modesCompatible(existing, mode)
+                    ) {
+                        return@mapNotNull null
+                    }
+                    info to mode
                 } else {
-                    info.frozenMode?.takeIf { it.isNotEmpty() }
-                        ?: HailData.workingModeForApp(info, preferredTagId)
+                    val stored = info.frozenMode?.takeIf { it.isNotEmpty() }
+                    when {
+                        stored != null -> {
+                            if (scopeAction != null && !HailData.modesCompatible(stored, scopeMode)) null
+                            else info to stored
+                        }
+                        scopeAction != null -> {
+                            if (AppManager.isAppFrozen(info.packageName, scopeMode)) info to scopeMode
+                            else null
+                        }
+                        else -> info to HailData.workingModeForApp(info, preferredTagId)
+                    }
                 }
-                info to mode
             }
             .filter { (info, mode) ->
                 AppManager.isAppFrozen(
