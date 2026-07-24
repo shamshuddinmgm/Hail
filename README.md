@@ -4,7 +4,7 @@
 
 Fork of [chaoscreater/Hail](https://github.com/chaoscreater/Hail) · upstream [aistra0528/Hail](https://github.com/aistra0528/Hail)
 
-[![Version](https://img.shields.io/badge/version-34.52.09--async-1B6CA8)](#)
+[![Version](https://img.shields.io/badge/version-34.52.10--async-1B6CA8)](#)
 [![Package](https://img.shields.io/badge/id-com.shams.srk.hail-39FF14)](#)
 [![Min SDK](https://img.shields.io/badge/minSdk-23-blue)](#)
 [![License](https://img.shields.io/badge/license-GPL--3.0-lightgrey)](LICENSE)
@@ -32,7 +32,9 @@ Fork of [chaoscreater/Hail](https://github.com/chaoscreater/Hail) · upstream [a
 - `frozenMode` remembered per app for correct restore / export
 
 ### Home & Apps UX
-- Bottom nav: **Home · Apps · Settings · Search** (About moved into Settings)
+- Bottom nav: compact **Home · Apps · Settings** cluster + wide **Search** (theme-accent borders)
+- **Reorder pinned apps** (move / drag); pin order persisted
+- About lives in **Settings** (not bottom nav)
 - Toolbar: Home / Whitelist / Search / Multiselect · Shortcuts in ⋮
 - Row tap on Apps selects/deselects (checkbox clear of fast-scroll)
 - Search Enter launches top result (unfreeze + launch)
@@ -56,7 +58,7 @@ Fork of [chaoscreater/Hail](https://github.com/chaoscreater/Hail) · upstream [a
 |---|---|
 | App name | **Hail Async** |
 | Package | `com.shams.srk.hail` |
-| Version | `34.52.09-async` |
+| Version | `34.52.10-async` |
 | Deep links | `hailasync://…` |
 
 ---
@@ -68,7 +70,7 @@ Release APK (when published): see **[Releases](../../releases)**.
 Sideload debug/release builds from CI or local:
 
 ```text
-Hail-v34.52.09-async.apk
+Hail-v34.52.10-async.apk
 ```
 
 > **Note:** New package id = fresh install. Export settings from your previous Hail+ build before switching.
@@ -96,7 +98,7 @@ Add device screenshots under `fastlane/metadata/` or Releases as you capture the
 
 ```bash
 ./gradlew :app:assembleRelease
-# APK → app/build/outputs/apk/release/Hail-v34.52.09-async.apk
+# APK → app/build/outputs/apk/release/Hail-v34.52.10-async.apk
 ```
 
 JDK 17 · Android SDK 36

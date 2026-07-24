@@ -6,6 +6,24 @@ Version format: **`34.52.<revision>-async`**
 
 ---
 
+## [34.52.10-async] — 2026-07-25
+
+### Added
+- 📌 **Reorder pinned apps** — move to top / up / down / end, or **Drag to reorder**
+- Persistent `pinOrder` (saved + settings backup)
+- Pushpin marker on pinned Home icons
+
+### Improved
+- 🧭 **Bottom nav layout** — Home · Apps · Settings clustered; **Search** gets a wide thumb zone
+- Theme-accent borders on nav chips; icons ~+15% larger (28dp)
+- Home long-press actions use stable action IDs (safer menu)
+
+### Notes
+- Side-by-side install: `com.shams.srk.hail`
+- Shizuku Hide still needs **root Shizuku** on HyperOS (ADB Shizuku lacks `MANAGE_USERS`)
+
+---
+
 ## [34.52.09-async] — 2026-07-25
 
 ### Added
@@ -46,4 +64,5 @@ Version format: **`34.52.<revision>-async`**
 
 ---
 
+[34.52.10-async]: https://github.com/shamshuddinmgm/Hail/releases/tag/v34.52.10-async
 [34.52.09-async]: https://github.com/shamshuddinmgm/Hail/releases
