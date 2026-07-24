@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- Checked = theme primary neon/accent; unchecked = muted surface text -->
-    <selector xmlns:android="http://schemas.android.com/apk/res/android">
-        <item android:color="?attr/colorPrimary" android:state_checked="true" />
-        <item android:color="?attr/colorPrimary" android:state_selected="true" />
-        <item android:color="?attr/colorOnSurfaceVariant" />
-    </selector>
-</resources>
+<!-- Solid colors only — theme attrs inside ColorStateList crash inflate on some OEMs (HyperOS). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/color_hail" android:state_checked="true" />
+    <item android:color="@color/color_hail" android:state_selected="true" />
+    <item android:color="#8A9099" />
+</selector>

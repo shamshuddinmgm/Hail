@@ -43,7 +43,14 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         super.onCreate(savedInstanceState)
         HTheme.enableHighRefreshRate(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        val binding = initView()
+        val binding = try {
+            initView()
+        } catch (t: Throwable) {
+            // Last-resort: if themed chrome fails to inflate, retry once with stock Theme.Hail
+            android.util.Log.e("MainActivity", "initView failed", t)
+            setTheme(R.style.Theme_Hail)
+            initView()
+        }
         if (!HailData.biometricLogin || BiometricManager.from(this)
                 .canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL) != BiometricManager.BIOMETRIC_SUCCESS
         ) return

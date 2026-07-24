@@ -25,8 +25,6 @@
 
     <style name="Widget.Hail.BottomNav" parent="Widget.Material3.BottomNavigationView">
         <item name="backgroundTint">?attr/colorSurfaceContainer</item>
-        <item name="itemIconTint">@color/nav_item_tint</item>
-        <item name="itemTextColor">@color/nav_item_tint</item>
         <item name="itemRippleColor">?attr/colorPrimary</item>
         <item name="elevation">0dp</item>
     </style>
@@ -158,8 +156,8 @@
     </style>
 
     <style name="Theme.Hail.Ember" parent="Theme.Hail.PremiumDark">
-        <item name="fontFamily">sans-serif-black</item>
-        <item name="android:fontFamily">sans-serif-black</item>
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="textAppearanceBodyLarge">@style/TextAppearance.Hail.Ember</item>
         <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Sharp</item>
         <item name="colorPrimary">@color/ember_primary</item>
@@ -228,7 +226,7 @@
         <item name="android:fontFamily">sans-serif-condensed</item>
         <item name="textAppearanceBodyLarge">@style/TextAppearance.Hail.Cyber</item>
         <item name="textAppearanceTitleMedium">@style/TextAppearance.Hail.Cyber</item>
-        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Pill</item>
+        <item name="shapeAppearanceCornerLarge">@style/Shape.Hail.Round</item>
         <item name="colorPrimary">@color/cyber_primary</item>
         <item name="colorOnPrimary">@color/cyber_onPrimary</item>
         <item name="colorPrimaryContainer">@color/cyber_primaryContainer</item>
