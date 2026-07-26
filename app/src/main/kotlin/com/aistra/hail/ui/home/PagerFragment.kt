@@ -1376,9 +1376,13 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             searchView.clearFocus()  // show text without re-opening keyboard
         }
 
+        // Collapse (Back) fires empty text while still expanded — ignore that wipe.
+        var searchCollapsing = false
+
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextChange(newText: String): Boolean {
-                // Ignore the empty event fired when the SearchView collapses
+                if (searchCollapsing) return true
+                // Ignore the empty event fired after the SearchView has collapsed
                 if (newText.isEmpty() && !searchItem.isActionViewExpanded) return true
                 query = newText
                 tabs.isVisible = query.isEmpty() && tabs.tabCount > 1
@@ -1396,13 +1400,13 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             }
         })
 
-        // Only clear the query when the user explicitly closes the search (X button)
+        // Back / collapse chrome only — keep filtered results.
+        // Clearing is done by the SearchView X (empty text while still expanded).
         searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
             override fun onMenuItemActionExpand(item: MenuItem): Boolean = true
             override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
-                query = ""
-                tabs.isVisible = tabs.tabCount > 1
-                updateCurrentList()
+                searchCollapsing = true
+                searchView.post { searchCollapsing = false }
                 return true
             }
         })

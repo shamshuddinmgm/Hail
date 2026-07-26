@@ -6,6 +6,13 @@ Version format: **`34.52.<revision>-async`**
 
 ---
 
+## [34.52.18-async] — 2026-07-27
+
+### Fixed
+- Apps search: pressing Back no longer wipes filtered results (aligned with Home)
+
+---
+
 ## [34.52.17-async] — 2026-07-27
 
 ### Build

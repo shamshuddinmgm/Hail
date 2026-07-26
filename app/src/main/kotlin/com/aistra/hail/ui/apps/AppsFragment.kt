@@ -239,10 +239,13 @@ class AppsFragment : MainFragment(), AppsAdapter.OnItemClickListener, AppsAdapte
             searchView.clearFocus()   // keep keyboard closed; just show the text
         }
 
+        // Collapse (Back) fires an empty onQueryTextChange while still expanded — ignore that wipe.
+        var searchCollapsing = false
+
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextChange(newText: String): Boolean {
-                // Ignore the empty-string event that fires when the SearchView collapses
-                // (isIconified becomes true a moment later; check the item's state instead)
+                if (searchCollapsing) return true
+                // Ignore empty event after collapse finishes
                 if (newText.isEmpty() && !searchItem.isActionViewExpanded) return true
                 model.postQuery(newText, if (newText.isEmpty()) 0L else 300L)
                 return true
@@ -255,11 +258,13 @@ class AppsFragment : MainFragment(), AppsAdapter.OnItemClickListener, AppsAdapte
             }
         })
 
-        // When the user explicitly collapses the search (X button), clear the query
+        // Back / collapse chrome only — keep filtered results (same as Home).
+        // Clearing is done by the SearchView X (empty text while still expanded).
         searchItem.setOnActionExpandListener(object : MenuItem.OnActionExpandListener {
             override fun onMenuItemActionExpand(item: MenuItem) = true
             override fun onMenuItemActionCollapse(item: MenuItem): Boolean {
-                model.postQuery("", 0L)
+                searchCollapsing = true
+                searchView.post { searchCollapsing = false }
                 return true
             }
         })
