@@ -109,7 +109,11 @@ class ApiActivity : ComponentActivity() {
      * hailasync://remove_whitelist?package=xxx
      */
     private fun handleSchema(uri: Uri?): Boolean {
-        if (uri?.scheme != "hail") throw IllegalArgumentException("Unknown scheme:\n${uri?.scheme}")
+        // Manifest scheme is hailasync:// (fork id); accept legacy hail:// too
+        val scheme = uri?.scheme
+        if (scheme != "hailasync" && scheme != "hail") {
+            throw IllegalArgumentException("Unknown scheme:\n$scheme")
+        }
         return handleAction(
             when (uri.host) {
                 "launch" -> HailApi.ACTION_LAUNCH
@@ -259,7 +263,7 @@ class ApiActivity : ComponentActivity() {
         val mode = info?.frozenMode?.takeIf { it.isNotEmpty() }
             ?: info?.let { HailData.workingModeForApp(it, tagId) }
             ?: HailData.workingMode
-        if (AppManager.isAppFrozen(pkg, info?.frozenMode ?: mode) && AppManager.setAppFrozen(pkg, false, mode)) {
+        if (AppManager.isAppFrozen(pkg, mode) && AppManager.setAppFrozen(pkg, false, mode)) {
             info?.frozenMode = null
             HailData.saveApps()
             app.setAutoFreezeService()

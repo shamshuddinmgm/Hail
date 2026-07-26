@@ -55,10 +55,17 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
      * This method is only used to refresh all the applications that the user has installed
      * and has no filtering or sorting effect.
      * */
-    fun updateAppList() {
+    fun updateAppList(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             postRefreshState(true)
-            apps.postValue(HPackages.getInstalledApplications())
+            val list = withContext(Dispatchers.Default) {
+                if (forceRefresh) InstalledAppsCache.clear()
+                InstalledAppsCache.get() ?: HPackages.getInstalledApplications().also {
+                    InstalledAppsCache.put(it)
+                }
+            }
+            apps.postValue(list)
+            postRefreshState(false)
         }
     }
 
@@ -120,11 +127,13 @@ class AppsViewModel(application: Application) : AndroidViewModel(application) {
                         || (HailData.filterUnfrozenApps && !info.isAppFrozen))
 
                         // Search
-                        && ((HailData.nineKeySearch
-                        && (NineKeySearch.search(query, info.packageName, info.loadLabel(pm).toString())))
-                        || FuzzySearch.search(info.packageName, query)
-                        || FuzzySearch.search(info.loadLabel(pm).toString(), query)
-                        || PinyinSearch.searchPinyinAll(info.loadLabel(pm).toString(), query))
+                        && run {
+                    val label = info.loadLabel(pm).toString()
+                    (HailData.nineKeySearch && NineKeySearch.search(query, info.packageName, label))
+                            || FuzzySearch.search(info.packageName, query)
+                            || FuzzySearch.search(label, query)
+                            || PinyinSearch.searchPinyinAll(label, query)
+                }
             }.run {
                 when (HailData.sortBy) {
                     HailData.SORT_INSTALL -> sortedBy {

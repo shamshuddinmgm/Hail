@@ -18,8 +18,8 @@ android {
         minSdk = 23
         targetSdk = 36
         // Format: 34.52.<revision>-async  (revision = feature pushes/commits on this fork)
-        versionCode = 345210
-        versionName = "34.52.10-async"
+        versionCode = 345216
+        versionName = "34.52.16-async"
     }
 
     buildTypes {
@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.androidx.biometric.ktx)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.lifecycle.livedata.ktx)
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)

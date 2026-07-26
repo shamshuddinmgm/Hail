@@ -49,13 +49,25 @@ import com.aistra.hail.databinding.FragmentPagerBinding
 import com.aistra.hail.extensions.*
 import com.aistra.hail.ui.main.MainFragment
 import com.aistra.hail.ui.theme.AppTheme
-import com.aistra.hail.utils.*
+import com.aistra.hail.utils.AppIconCache
+import com.aistra.hail.utils.AppMetaCache
+import com.aistra.hail.utils.FuzzySearch
+import com.aistra.hail.utils.HPackages
+import com.aistra.hail.utils.HShortcuts
+import com.aistra.hail.utils.HShizuku
+import com.aistra.hail.utils.HUI
+import com.aistra.hail.utils.LaunchReady
+import com.aistra.hail.utils.NameComparator
+import com.aistra.hail.utils.NineKeySearch
+import com.aistra.hail.utils.PinyinSearch
 import com.aistra.hail.work.HWork
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -79,7 +91,15 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
     private val selectedList get() = (parentFragment as HomeFragment).selectedList
     private val tabs: TabLayout get() = (parentFragment as HomeFragment).binding.tabs
     private val adapter get() = (parentFragment as HomeFragment).binding.pager.adapter as HomeAdapter
-    private val tag: com.aistra.hail.app.TagInfo get() = HailData.tags[tabs.selectedTabPosition]
+    /** Tag bound to this pager page (not the currently selected tab — avoids off-screen wrong-list bugs). */
+    private val tag: com.aistra.hail.app.TagInfo
+        get() {
+            val argId = arguments?.getInt(ARG_TAG_ID, Int.MIN_VALUE)?.takeIf { it != Int.MIN_VALUE }
+            return (argId?.let { HailData.tagById(it) }
+                ?: HailData.tags.getOrNull(tabs.selectedTabPosition)
+                ?: HailData.tags.firstOrNull())
+                ?: com.aistra.hail.app.TagInfo(getString(R.string.label_default), 0)
+        }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
@@ -119,10 +139,11 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             }
             attachPinnedDragHelper(this)
         }
+        binding.fastScroll.attachTo(binding.recyclerView)
 
         binding.refresh.apply {
             setOnRefreshListener {
-                updateCurrentList()
+                updateCurrentList(forceLiveRefresh = true)
                 binding.refresh.isRefreshing = false
             }
             applyDefaultInsetter { marginRelative(isRtl, start = !isLandscape, end = true) }
@@ -132,7 +153,8 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
 
     override fun onResume() {
         super.onResume()
-        updateCurrentList()
+        // Skip duplicate rebuild when returning to an already-rendered tag tab
+        updateCurrentList(fromTagSwitch = lastRenderedTagId == tag.id && pagerAdapter.itemCount > 0)
         updateBarTitle()
         activity.appbar.setLiftOnScrollTargetView(binding.recyclerView)
         tabs.getTabAt(tabs.selectedTabPosition)?.view?.setOnLongClickListener {
@@ -157,9 +179,9 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
 
     fun forceIconRefresh() {
         if (!isAdded || _binding == null) return
-        pagerAdapter.invalidateContentFlags()
-        updateCurrentList()
-        pagerAdapter.notifyDataSetChanged()
+        HailData.checkedList.forEach { it.invalidateCaches() }
+        lastRenderedTagId = null
+        updateCurrentList(forceLiveRefresh = true)
     }
 
     private fun updateFreezeFabLabel() {
@@ -169,27 +191,88 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
     }
 
     private var searchMenuItem: MenuItem? = null
+    private var listUpdateJob: Job? = null
+    private var liveRefreshJob: Job? = null
+    private var lastRenderedTagId: Int? = null
+    private var lastRenderedQuery: String? = null
+    private var lastRenderedTypeFilter: Int? = null
 
-    internal fun updateCurrentList() = HailData.checkedList.filter {
-        if (query.isEmpty()) tag.id in it.tagIdList
-        else ((HailData.nineKeySearch && NineKeySearch.search(
-            query, it.packageName, it.name.toString()
-        )) || FuzzySearch.search(it.packageName, query) || FuzzySearch.search(
-            it.name.toString(), query
-        ) || PinyinSearch.searchPinyinAll(it.name.toString(), query))
-    }.filter {
-        when (appTypeFilter) {
-            APP_TYPE_USER -> it.applicationInfo?.flags?.and(ApplicationInfo.FLAG_SYSTEM) == 0
-            APP_TYPE_SYSTEM -> it.applicationInfo?.flags?.and(ApplicationInfo.FLAG_SYSTEM) != 0
-            else -> true
+    /**
+     * @param fromTagSwitch when true, skip if this tag's list is already on screen (swipe settle).
+     * @param forceLiveRefresh force a background PM refresh (pull-to-refresh / icon pack).
+     */
+    internal fun updateCurrentList(fromTagSwitch: Boolean = false, forceLiveRefresh: Boolean = false) {
+        if (!isAdded || _binding == null) return
+        val tagId = tag.id
+        val q = query
+        val typeFilter = appTypeFilter
+        if (fromTagSwitch &&
+            lastRenderedTagId == tagId &&
+            lastRenderedQuery == q &&
+            lastRenderedTypeFilter == typeFilter &&
+            pagerAdapter.itemCount > 0
+        ) {
+            if (isResumed) updateFreezeFabLabel()
+            return
         }
-    }.filter {
-        HailData.showUninstalled || it.applicationInfo != null
-    }.sortedWith(NameComparator).let {
-        binding.empty.isVisible = it.isEmpty()
-        pagerAdapter.submitList(it.toList())
-        app.setAutoFreezeService()
-        if (isResumed) updateFreezeFabLabel()
+        val showUninstalled = HailData.showUninstalled
+        val nineKey = HailData.nineKeySearch
+        listUpdateJob?.cancel()
+        listUpdateJob = viewLifecycleOwner.lifecycleScope.launch {
+            val list = withContext(Dispatchers.Default) {
+                val source = HailData.checkedList
+                AppMetaCache.applyToAll(source)
+                if (q.isNotEmpty() || typeFilter != APP_TYPE_ALL) {
+                    source.forEach { it.refreshFromPackageManager() }
+                }
+                source.filter {
+                    if (q.isEmpty()) tagId in it.tagIdList
+                    else ((nineKey && NineKeySearch.search(
+                        q, it.packageName, it.name.toString()
+                    )) || FuzzySearch.search(it.packageName, q) || FuzzySearch.search(
+                        it.name.toString(), q
+                    ) || PinyinSearch.searchPinyinAll(it.name.toString(), q))
+                }.filter {
+                    when (typeFilter) {
+                        APP_TYPE_USER -> !it.isSystemHint
+                        APP_TYPE_SYSTEM -> it.isSystemHint
+                        else -> true
+                    }
+                }.filter {
+                    showUninstalled || it.isInstalledHint
+                }.sortedWith(NameComparator)
+            }
+            if (!isAdded || _binding == null) return@launch
+            binding.empty.isVisible = list.isEmpty()
+            pagerAdapter.submitList(list) {
+                LaunchReady.markHomeReady()
+            }
+            LaunchReady.markHomeReady()
+            lastRenderedTagId = tagId
+            lastRenderedQuery = q
+            lastRenderedTypeFilter = typeFilter
+            if (isResumed) updateFreezeFabLabel()
+
+            // Background meta refresh — DiffUtil only, never notifyDataSetChanged
+            if (forceLiveRefresh || (!fromTagSwitch && q.isEmpty())) {
+                scheduleQuietLiveRefresh()
+            }
+        }
+    }
+
+    /** Soft PM refresh after paint — updates disk cache; DiffUtil rebinds only changed rows. */
+    private fun scheduleQuietLiveRefresh() {
+        liveRefreshJob?.cancel()
+        liveRefreshJob = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.Default) {
+            delay(450)
+            HailData.checkedList.forEach { it.refreshFromPackageManager() }
+            AppMetaCache.flush()
+            withContext(Dispatchers.Main) {
+                if (!isAdded || _binding == null) return@withContext
+                // New list instance → DiffUtil compares flags without notifyDataSetChanged
+                pagerAdapter.submitList(pagerAdapter.currentList.toList())
+            }
+        }
     }
 
     private fun updateBarTitle() {
@@ -403,6 +486,7 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
     }
 
     companion object {
+        const val ARG_TAG_ID = "tag_id"
         private const val APP_TYPE_ALL = 0
         private const val APP_TYPE_USER = 1
         private const val APP_TYPE_SYSTEM = 2
@@ -840,9 +924,9 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             HailData.workingModeDisplayName(currentTag.workingMode)
         )
         modeButton.setOnClickListener {
-            val values = listOf("") + HailData.WORKING_MODE_VALUES
+            val values = listOf("") + HailData.TAG_WORKING_MODE_VALUES
             val entries = listOf(getString(R.string.tag_mode_use_global)) +
-                    resources.getStringArray(R.array.working_mode_entries).toList()
+                    HailData.TAG_WORKING_MODE_VALUES.map { HailData.workingModeDisplayName(it) }
             val checked = values.indexOf(currentTag.workingMode ?: "").coerceAtLeast(0)
             MaterialAlertDialogBuilder(activity)
                 .setTitle(getString(R.string.tag_working_mode_for, currentTag.name))
@@ -918,9 +1002,9 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
         if (position != 0) {
             builder.setNeutralButton(R.string.action_tag_remove) { _, _ ->
                 val defaultTagId = 0
-                pagerAdapter.currentList.forEach { info ->
+                // Clean ALL home apps, not just the visible/filtered list
+                HailData.checkedList.forEach { info ->
                     if (info.tagIdList.remove(currentTagId) && info.tagIdList.isEmpty()) {
-                        // App lost its only tag — restore Default instead of removing it
                         info.tagIdList.add(defaultTagId)
                     }
                 }
@@ -1327,6 +1411,7 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
     }
 
     override fun onDestroyView() {
+        runCatching { binding.fastScroll.detach() }
         pagerAdapter.onDestroy()
         super.onDestroyView()
         _binding = null

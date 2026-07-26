@@ -8,6 +8,7 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import com.aistra.hail.R
 import com.aistra.hail.app.HailApi
 import com.aistra.hail.app.HailData
@@ -57,7 +58,12 @@ class AutoFreezeService : NotificationListenerService() {
     }
 
     private fun registerScreenReceiver() {
-        registerReceiver(lockReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
+        ContextCompat.registerReceiver(
+            this,
+            lockReceiver,
+            IntentFilter(Intent.ACTION_SCREEN_OFF),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
     }
 
     override fun onDestroy() {

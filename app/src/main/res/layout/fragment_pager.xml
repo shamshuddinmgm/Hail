@@ -17,10 +17,27 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false" />
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingEnd="8dp"
+                android:scrollbars="none" />
+
+            <!-- Same edge slider as Apps — available on every tag page -->
+            <com.aistra.hail.views.FastScrollSlider
+                android:id="@+id/fast_scroll"
+                android:layout_width="20dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:contentDescription="@string/fast_scroll" />
+        </FrameLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </FrameLayout>

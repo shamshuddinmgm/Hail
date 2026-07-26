@@ -76,7 +76,15 @@ object HFiles {
     }.getOrNull()
 
     fun write(target: String, text: String): Boolean = runCatching {
-        File(target).writeText(text)
+        val file = File(target)
+        val parent = file.parentFile
+        val tmp = File(parent, "${file.name}.tmp")
+        tmp.writeText(text)
+        if (!tmp.renameTo(file)) {
+            // Cross-filesystem rename fallback
+            file.writeText(text)
+            tmp.delete()
+        }
         true
     }.getOrDefault(false)
 }

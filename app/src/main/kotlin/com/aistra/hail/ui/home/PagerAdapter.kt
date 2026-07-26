@@ -32,44 +32,41 @@ class PagerAdapter(
         val info = currentList[position]
         flags[info.packageName] = info.getFlag(selectedList)
         holder.loadIconJob?.cancel()
-        holder.itemView.run {
-            setOnClickListener { onItemClickListener.onItemClick(info) }
-            setOnLongClickListener { onItemLongClickListener.onItemLongClick(holder, info) }
-            findViewById<ImageView>(R.id.app_icon).run {
-                info.applicationInfo?.let {
-                    holder.loadIconJob = AppIconCache.loadIconBitmapAsync(
-                        context,
-                        it,
-                        myUserId,
-                        this,
-                        HailData.grayscaleIcon && info.state == AppInfo.State.FROZEN
-                    )
-                } ?: run {
-                    setImageDrawable(context.packageManager.defaultActivityIcon)
-                    colorFilter = null
-                }
-            }
-            findViewById<TextView>(R.id.app_name).run {
-                text = buildString {
-                    if (info.pinned) append("\uD83D\uDCCC") // pushpin
-                    if (!HailData.grayscaleIcon && info.state == AppInfo.State.FROZEN) append("\u2744\uFE0F")
-                    if (info.whitelisted) append("\uD83D\uDD12")
-                    append(info.name)
-                }
-                isEnabled = !HailData.grayscaleIcon || info.state != AppInfo.State.FROZEN
-                when {
-                    info in selectedList -> setTextColor(
-                        MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary)
-                    )
+        holder.itemView.setOnClickListener { onItemClickListener.onItemClick(info) }
+        holder.itemView.setOnLongClickListener { onItemLongClickListener.onItemLongClick(holder, info) }
 
-                    info.state == AppInfo.State.NOT_FOUND -> setTextColor(
-                        MaterialColors.getColor(this, androidx.appcompat.R.attr.colorError)
-                    )
-
-                    else -> setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
-                }
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, HailData.homeFontSize)
+        holder.icon.run {
+            info.applicationInfo?.let {
+                holder.loadIconJob = AppIconCache.loadIconBitmapAsync(
+                    context,
+                    it,
+                    myUserId,
+                    this,
+                    HailData.grayscaleIcon && info.state == AppInfo.State.FROZEN
+                )
+            } ?: run {
+                setImageDrawable(context.packageManager.defaultActivityIcon)
+                colorFilter = null
             }
+        }
+        holder.name.run {
+            text = buildString {
+                if (info.pinned) append("\uD83D\uDCCC")
+                if (!HailData.grayscaleIcon && info.state == AppInfo.State.FROZEN) append("\u2744\uFE0F")
+                if (info.whitelisted) append("\uD83D\uDD12")
+                append(info.name)
+            }
+            isEnabled = !HailData.grayscaleIcon || info.state != AppInfo.State.FROZEN
+            when {
+                info in selectedList -> setTextColor(
+                    MaterialColors.getColor(this, androidx.appcompat.R.attr.colorPrimary)
+                )
+                info.state == AppInfo.State.NOT_FOUND -> setTextColor(
+                    MaterialColors.getColor(this, androidx.appcompat.R.attr.colorError)
+                )
+                else -> setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+            }
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, HailData.homeFontSize)
         }
     }
 
@@ -83,7 +80,6 @@ class PagerAdapter(
         // no-op: jobs cancelled per ViewHolder
     }
 
-    /** Clear cached DiffUtil flags so freeze/unfreeze always rebinds visible icons. */
     fun invalidateContentFlags() = flags.clear()
 
     private class HomeDiff(
@@ -99,6 +95,8 @@ class PagerAdapter(
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val icon: ImageView = view.findViewById(R.id.app_icon)
+        val name: TextView = view.findViewById(R.id.app_name)
         var loadIconJob: Job? = null
     }
 

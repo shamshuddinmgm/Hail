@@ -6,6 +6,79 @@ Version format: **`34.52.<revision>-async`**
 
 ---
 
+## [34.52.16-async] — 2026-07-27
+
+### Added
+- 📜 **Fast-scroll slider on Home** — same edge control as Apps, on every tag page
+
+### Fixed
+- `hailasync://` deep links (scheme check matched the manifest)
+- Auto-freeze screen-off receiver on Android 13+ (`RECEIVER_NOT_EXPORTED`)
+- Empty tags after backup import no longer crash Home
+- Settings crash on unknown/corrupt preference values
+- Removing a tag now reassigns **all** apps (not only the visible list)
+- Settings export no longer reports success when the file wasn’t written
+- Tag working-mode picker no longer offers a dead “Default” backend
+- Freeze/unfreeze via API/shortcuts refreshes app state immediately
+- Tag reorder refreshes Home tabs; pager pages bind to tag id (off-screen list bugs)
+- Atomic apps/tags file writes; meta-cache saves on a single worker thread
+
+### Smoothness
+- Stronger 120 Hz window; Settings no longer fights AppBar nested-scroll
+- Apps pull-to-refresh clears install cache; search labels loaded once
+
+---
+
+## [34.52.15-async] — 2026-07-27
+
+### Smoothness
+- Window + surface refresh-rate hints for HyperOS 120 Hz panels
+- Settings: disable AppBar lift-on-scroll while Compose preferences are open
+
+---
+
+## [34.52.14-async] — 2026-07-26
+
+### Smoothness
+- Tag switches: single settle-only refresh (no stacked list rebuilds mid-swipe)
+- Removed post-paint `notifyDataSetChanged` (DiffUtil-only soft refresh)
+- Icons: memory-only on UI thread; disk decode stays off-main
+- Home↔Apps: cached installed-apps list; Apps RV animator off
+- Nav transitions: short fade only (no translate stutter)
+- Settings: icon-pack query remembered; nested-scroll interop; label cache
+
+---
+
+## [34.52.13-async] — 2026-07-26
+
+### Performance
+- 💾 **Persistent app meta cache** — labels, system/install flags, freeze state on disk
+- 🖼 **Disk icon cache** — icons reload from `cache/icons` without PackageManager
+- Home paints from disk cache on cold start, then refreshes live in the background
+
+---
+
+## [34.52.12-async] — 2026-07-26
+
+### Performance & launch
+- 🚀 **SplashScreen** brand landing (snowflake) kept until Home list is ready
+- Soft landing animation: content rise-in · bottom nav slide · FAB pop
+- Deeper background warm of PackageManager caches at process start
+- Splash timeout safety (1.8s) so launch never hangs
+
+---
+
+## [34.52.11-async] — 2026-07-26
+
+### Performance
+- ⚡ **Faster cold start** — cache PackageManager lookups / labels / freeze state on `AppInfo`
+- Home list filter+sort moved off the main thread
+- Defer AutoFreeze service scan, icon preload, and 120 Hz prefer until after first frame
+- Icon pack: skip work when unset; parse `appfilter` once
+- Lower ViewPager offscreen pages (2 → 1)
+
+---
+
 ## [34.52.10-async] — 2026-07-25
 
 ### Added

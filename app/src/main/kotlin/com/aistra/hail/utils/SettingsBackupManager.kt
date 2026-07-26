@@ -93,6 +93,8 @@ object SettingsBackupManager {
             HailData.FILTER_UNADDED_USER_APPS,
             HailData.FILTER_ADDED_SYSTEM_APPS,
             HailData.FILTER_UNADDED_SYSTEM_APPS,
+            HailData.SHORTCUT_LAUNCH_PROMPT,
+            HailData.SHIZUKU_REQUIRED_NOTIFICATION,
             "sort_by",
         ).forEach { key ->
             allPrefs[key]?.let { value ->
@@ -112,8 +114,8 @@ object SettingsBackupManager {
             OutputStreamWriter(stream, Charsets.UTF_8).use { writer ->
                 writer.write(root.toString(2))
             }
-        }
-        true
+            true
+        } ?: false
     }.getOrElse { it.printStackTrace(); false }
 
     /**
@@ -136,6 +138,7 @@ object SettingsBackupManager {
                 val id = obj.getInt("id")
                 HailData.tags.add(com.aistra.hail.app.TagInfo(name, id, obj.optString(HailData.WORKING_MODE).ifEmpty { null }))
             }
+            HailData.ensureDefaultTag()
             HailData.saveTags()
         }
 

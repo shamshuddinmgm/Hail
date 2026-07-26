@@ -85,8 +85,13 @@ class SettingsFragment : MainFragment(), MenuProvider {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val menuHost = requireActivity() as MenuHost
         menuHost.addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
+        // Don't fight AppBar nested-scroll — that caused high input latency / "not 120Hz" feel
+        activity.appbar.setLiftOnScrollTargetView(null)
+        activity.appbar.setLiftable(false)
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            // Keep Settings surface at peak Hz while visible (Android 15 ARR otherwise sits at 60)
+            HTheme.requestSurfaceFrameRate(this, 120f)
             setContent {
                 AppTheme {
                     ProvidePreferenceLocals {
@@ -97,10 +102,22 @@ class SettingsFragment : MainFragment(), MenuProvider {
         }
     }
 
+    override fun onDestroyView() {
+        activity.appbar.setLiftable(true)
+        super.onDestroyView()
+    }
+
     @Composable
     private fun SettingsScreen() {
         val autoFreezeAfterLock = rememberPreferenceState(HailData.AUTO_FREEZE_AFTER_LOCK, false)
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
+        val iconPackPackages = rememberIconPackPackages()
+        val listState = rememberLazyListState()
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            // Prefetch a couple rows so flings don't hitch on preference inflate
+            userScrollEnabled = true
+        ) {
             listPreference(
                 key = HailData.WORKING_MODE,
                 defaultValue = HailData.MODE_DEFAULT,
@@ -146,13 +163,7 @@ class SettingsFragment : MainFragment(), MenuProvider {
                     AppIconCache.clear()
                     true
                 },
-                values = mutableListOf(HailData.ACTION_NONE).apply {
-                    addAll(Intent(Intent.ACTION_MAIN).addCategory("com.anddoes.launcher.THEME").let {
-                        if (HTarget.T) app.packageManager.queryIntentActivities(
-                            it, PackageManager.ResolveInfoFlags.of(0)
-                        ) else app.packageManager.queryIntentActivities(it, 0)
-                    }.map { it.activityInfo.packageName })
-                },
+                values = iconPackPackages,
                 titleId = R.string.icon_pack,
                 icon = Icons.Outlined.Palette,
                 summary = { iconPackName(it) },
@@ -425,11 +436,36 @@ class SettingsFragment : MainFragment(), MenuProvider {
         type = type,
         valueToText = { it.toEntry(values, entriesId) })
 
-    private fun String.toEntry(values: List<String>, @ArrayRes entriesId: Int): String =
-        resources.getStringArray(entriesId)[values.indexOf(this)]
+    private fun String.toEntry(values: List<String>, @ArrayRes entriesId: Int): String {
+        val entries = resources.getStringArray(entriesId)
+        val i = values.indexOf(this)
+        return if (i in entries.indices) entries[i] else this
+    }
 
-    private fun iconPackName(pack: String): String = if (pack == HailData.ACTION_NONE) getString(R.string.action_none)
-    else HPackages.getApplicationInfoOrNull(pack)?.loadLabel(app.packageManager)?.toString() ?: pack
+    @Composable
+    private fun rememberIconPackPackages(): List<String> = remember {
+        buildList {
+            add(HailData.ACTION_NONE)
+            val intent = Intent(Intent.ACTION_MAIN).addCategory("com.anddoes.launcher.THEME")
+            val resolved = if (HTarget.T) {
+                app.packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                app.packageManager.queryIntentActivities(intent, 0)
+            }
+            addAll(resolved.map { it.activityInfo.packageName })
+        }
+    }
+
+    private val iconPackLabelCache = mutableMapOf<String, String>()
+
+    private fun iconPackName(pack: String): String {
+        if (pack == HailData.ACTION_NONE) return getString(R.string.action_none)
+        iconPackLabelCache[pack]?.let { return it }
+        val label = HPackages.getApplicationInfoOrNull(pack)?.loadLabel(app.packageManager)?.toString() ?: pack
+        iconPackLabelCache[pack] = label
+        return label
+    }
 
     private fun addPinShortcut() {
         MaterialAlertDialogBuilder(requireActivity()).setTitle(R.string.action_add_pin_shortcut)
@@ -906,7 +942,10 @@ class SettingsFragment : MainFragment(), MenuProvider {
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 HailData.tags.clear()
                 HailData.tags.addAll(workingTags)
+                HailData.ensureDefaultTag()
                 HailData.saveTags()
+                // Tabs bind to tag order — recreate so Home TabLayoutMediator matches
+                activity.recreate()
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -931,9 +970,9 @@ class SettingsFragment : MainFragment(), MenuProvider {
     }
 
     private fun showTagModePicker(tag: com.aistra.hail.app.TagInfo) {
-        val values = listOf("") + HailData.WORKING_MODE_VALUES
+        val values = listOf("") + HailData.TAG_WORKING_MODE_VALUES
         val entries = listOf(getString(R.string.tag_mode_use_global)) +
-                resources.getStringArray(R.array.working_mode_entries).toList()
+                HailData.TAG_WORKING_MODE_VALUES.map { HailData.workingModeDisplayName(it) }
         val checked = values.indexOf(tag.workingMode ?: "").coerceAtLeast(0)
         MaterialAlertDialogBuilder(requireActivity())
             .setTitle(getString(R.string.tag_working_mode_for, tag.name))

@@ -13,6 +13,7 @@ import com.aistra.hail.app.AppManager
 import com.aistra.hail.app.HailData
 import com.aistra.hail.services.AutoFreezeService
 import com.aistra.hail.utils.HDhizuku
+import com.aistra.hail.utils.AppMetaCache
 import com.aistra.hail.utils.HTarget
 import com.aistra.hail.utils.HTheme
 
@@ -22,12 +23,31 @@ class HailApp : Application() {
         app = this
         // DirtyDataUpdater.update(app)
         if (!HTarget.S) setAppTheme(HailData.appTheme)
-        if (HailData.workingMode.startsWith(HailData.DHIZUKU)) HDhizuku.init()
+        if (HailData.workingMode.startsWith(HailData.DHIZUKU)) {
+            // Binder init can wait until after first frame
+            android.os.Handler(mainLooper).post { runCatching { HDhizuku.init() } }
+        }
+        // Load meta + apps JSON, seed labels/state from disk, then refresh PM in background
+        Thread({
+            runCatching {
+                AppMetaCache.ensureLoaded()
+                HailData.tags.size
+                val apps = HailData.checkedList
+                AppMetaCache.applyToAll(apps)
+                // Live refresh PackageManager → rewrite disk cache for next cold start
+                apps.forEach { it.refreshFromPackageManager() }
+                AppMetaCache.flush()
+            }
+        }, "hail-data-warm").apply {
+            priority = Thread.NORM_PRIORITY - 1
+            start()
+        }
     }
 
     fun setAutoFreezeService(autoFreezeAfterLock: Boolean = HailData.autoFreezeAfterLock, context: Context = app) {
         val start = autoFreezeAfterLock && HailData.checkedList.any {
-            it.packageName != packageName && it.applicationInfo != null && !AppManager.isAppFrozen(it.packageName) && !it.whitelisted
+            it.packageName != packageName && !it.whitelisted &&
+                it.applicationInfo != null && !AppManager.isAppFrozen(it)
         }
         val intent = Intent(app, AutoFreezeService::class.java)
         if (start) {

@@ -55,9 +55,8 @@ class HomeFragment : MainFragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         if (tags.size == 1) binding.tabs.isVisible = false
         binding.pager.adapter = HomeAdapter(this)
-        // Keep all tag fragments alive so revisiting a tab requires no RecyclerView
-        // rebind — DiffUtil sees no changes and the icons render from existing views instantly.
-        binding.pager.offscreenPageLimit = 2
+        // One offscreen page is enough; 2× extra PagerFragments hurt cold start hard.
+        binding.pager.offscreenPageLimit = 1
         TabLayoutMediator(binding.tabs, binding.pager) { tab, position ->
             tab.text = tags[position].name
         }.attach()
@@ -75,30 +74,23 @@ class HomeFragment : MainFragment() {
             override fun onTabReselected(tab: TabLayout.Tab) {}
         })
 
-        // When a page fully settles, refresh that page's fragment with the now-correct
-        // tab position. This fixes the race where onResume() fires during animation
-        // before TabLayoutMediator has updated selectedTabPosition.
+        // Settle-only refresh: avoid stacking updateCurrentList during the swipe animation.
         binding.pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                // Load icons immediately when a tab is tapped, without waiting for the
-                // scroll animation to finish. This makes distant tabs feel responsive.
-                (childFragmentManager.findFragmentByTag("f$position") as? PagerFragment)
-                    ?.updateCurrentList()
-            }
-
             override fun onPageScrollStateChanged(state: Int) {
                 if (state == ViewPager2.SCROLL_STATE_IDLE) {
                     val pos = binding.pager.currentItem
                     (childFragmentManager.findFragmentByTag("f$pos") as? PagerFragment)
-                        ?.updateCurrentList()
+                        ?.updateCurrentList(fromTagSwitch = true)
                 }
             }
         })
 
-        // Pre-warm the icon cache for all checked apps so switching tag categories
-        // shows icons instantly instead of waiting for them to load on demand.
-        val appsToPreload = HailData.checkedList.mapNotNull { it.applicationInfo }
-        AppIconCache.preloadIconsAsync(requireContext().applicationContext, appsToPreload, myUserId)
+        // Preload icons AFTER first layout so PackageManager work doesn't block first paint.
+        binding.root.post {
+            if (_binding == null) return@post
+            val pkgs = HailData.checkedList.map { it.packageName }
+            AppIconCache.preloadPackagesAsync(requireContext().applicationContext, pkgs, myUserId)
+        }
 
         return binding.root
     }

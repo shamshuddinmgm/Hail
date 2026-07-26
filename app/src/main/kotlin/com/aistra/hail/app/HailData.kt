@@ -100,6 +100,11 @@ object HailData {
         MODE_PRIVAPP_STOP,
         MODE_PRIVAPP_DISABLE
     )
+
+    /** Real freeze backends only — never store MODE_DEFAULT as a tag override. */
+    val TAG_WORKING_MODE_VALUES: List<String>
+        get() = WORKING_MODE_VALUES.filter { it != MODE_DEFAULT }
+
     const val BIOMETRIC_LOGIN = "biometric_login"
     const val APP_THEME = "app_theme"
     const val FOLLOW_SYSTEM = "follow_system"
@@ -253,6 +258,7 @@ object HailData {
                 if (pinned.size > 1 && pinned.map { it.pinOrder }.toSet().size < pinned.size) {
                     pinned.forEachIndexed { index, app -> app.pinOrder = index }
                 }
+                com.aistra.hail.utils.AppMetaCache.applyToAll(this)
             }
         }
     }
@@ -266,6 +272,7 @@ object HailData {
 
     fun removeCheckedApp(packageName: String, saveApps: Boolean = true) {
         checkedList.removeAll { it.packageName == packageName }
+        com.aistra.hail.utils.AppMetaCache.remove(packageName)
         if (saveApps) saveApps()
     }
 
@@ -305,9 +312,24 @@ object HailData {
                     })
                 }
             }.onFailure {
-                add(TagInfo(app.getString(R.string.label_default), 0))
+                // fall through to ensureDefaultTag
             }
+            // Don't persist here — tags lazy is still initializing; saveTags() would re-enter
+            ensureDefaultTag(this, persist = false)
         }
+    }
+
+    /** Guarantees at least the Default tag (id 0) exists after load/import. */
+    fun ensureDefaultTag(list: MutableList<TagInfo> = tags, persist: Boolean = true) {
+        var changed = false
+        if (list.isEmpty()) {
+            list.add(TagInfo(app.getString(R.string.label_default), 0))
+            changed = true
+        } else if (list.none { it.id == 0 }) {
+            list.add(0, TagInfo(app.getString(R.string.label_default), 0))
+            changed = true
+        }
+        if (changed && persist) saveTags()
     }
 
     fun saveTags() {

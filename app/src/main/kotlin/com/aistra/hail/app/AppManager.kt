@@ -1,6 +1,7 @@
 package com.aistra.hail.app
 
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import com.aistra.hail.BuildConfig
 import com.aistra.hail.utils.*
 import kotlinx.coroutines.Dispatchers
@@ -22,27 +23,38 @@ object AppManager {
         }
 
     fun isAppFrozen(packageName: String, mode: String? = null): Boolean {
-        val effective = mode?.takeIf { it.isNotEmpty() } ?: run {
-            HailData.checkedList.find { it.packageName == packageName }?.frozenMode
-                ?.takeIf { it.isNotEmpty() }
+        HailData.checkedList.find { it.packageName == packageName }?.let {
+            return isAppFrozen(it, mode)
         }
-        return when {
-            // No recorded Hail freeze: treat as frozen only for Disable / Hide / Suspend.
-            // Do NOT use FLAG_STOPPED here — Android keeps apps "stopped" after enable/unsuspend
-            // until the user launches them once, which falsely kept icons grey after Unfreeze all.
-            effective == null || effective == HailData.MODE_DEFAULT ->
-                HPackages.isAppDisabled(packageName)
-                        || HPackages.isAppHidden(packageName)
-                        || HPackages.isAppSuspended(packageName)
+        val ai = HPackages.getApplicationInfoOrNull(packageName) ?: return false
+        val effective = mode?.takeIf { it.isNotEmpty() }
+        return isFrozenFromInfo(ai, effective)
+    }
 
-            effective.endsWith(HailData.STOP) -> HPackages.isAppStopped(packageName)
-            effective.endsWith(HailData.DISABLE) -> HPackages.isAppDisabled(packageName)
-            effective.endsWith(HailData.HIDE) -> HPackages.isAppHidden(packageName)
-            effective.endsWith(HailData.SUSPEND) -> HPackages.isAppSuspended(packageName)
-            else -> HPackages.isAppDisabled(packageName)
-                    || HPackages.isAppHidden(packageName)
-                    || HPackages.isAppSuspended(packageName)
-        }
+    /** Prefer this overload — uses [AppInfo]'s cached [ApplicationInfo] (one Binder round-trip). */
+    fun isAppFrozen(info: AppInfo, mode: String? = null): Boolean {
+        val ai = info.applicationInfo ?: return false
+        val effective = mode?.takeIf { it.isNotEmpty() }
+            ?: info.frozenMode?.takeIf { it.isNotEmpty() }
+        return isFrozenFromInfo(ai, effective)
+    }
+
+    private fun isFrozenFromInfo(ai: ApplicationInfo, effective: String?): Boolean = when {
+        // No recorded Hail freeze: treat as frozen only for Disable / Hide / Suspend.
+        // Do NOT use FLAG_STOPPED here — Android keeps apps "stopped" after enable/unsuspend
+        // until the user launches them once, which falsely kept icons grey after Unfreeze all.
+        effective == null || effective == HailData.MODE_DEFAULT ->
+            HPackages.isAppDisabled(ai)
+                    || HPackages.isAppHidden(ai)
+                    || HPackages.isAppSuspended(ai)
+
+        effective.endsWith(HailData.STOP) -> HPackages.isAppStopped(ai)
+        effective.endsWith(HailData.DISABLE) -> HPackages.isAppDisabled(ai)
+        effective.endsWith(HailData.HIDE) -> HPackages.isAppHidden(ai)
+        effective.endsWith(HailData.SUSPEND) -> HPackages.isAppSuspended(ai)
+        else -> HPackages.isAppDisabled(ai)
+                || HPackages.isAppHidden(ai)
+                || HPackages.isAppSuspended(ai)
     }
 
     /**
@@ -62,6 +74,7 @@ object AppManager {
                     name = info.name.toString()
                     if (frozen) info.frozenMode = mode
                     else info.frozenMode = null
+                    // invalidate/refresh already done inside setAppFrozen
                 }
 
                 info.applicationInfo != null -> {
@@ -70,7 +83,10 @@ object AppManager {
                 }
             }
         }
-        if (i > 0) HailData.saveApps()
+        if (i > 0) {
+            HailData.saveApps()
+            AppMetaCache.scheduleSave()
+        }
         return if (denied && i == 0) null else if (i == 1) name else i.toString()
     }
 
@@ -109,7 +125,10 @@ object AppManager {
             onChunk?.invoke(i, total)
             yield()
         }
-        if (i > 0) HailData.saveApps()
+        if (i > 0) {
+            HailData.saveApps()
+            AppMetaCache.scheduleSave()
+        }
         if (denied && i == 0) null else if (i == 1) name else i.toString()
     }
 
@@ -117,8 +136,8 @@ object AppManager {
     fun setListFrozen(frozen: Boolean, mode: String, vararg appInfo: AppInfo): String? =
         setListFrozen(frozen, appInfo.map { it to mode })
 
-    fun setAppFrozen(packageName: String, frozen: Boolean, mode: String = HailData.workingMode): Boolean =
-        packageName != BuildConfig.APPLICATION_ID && when (mode) {
+    fun setAppFrozen(packageName: String, frozen: Boolean, mode: String = HailData.workingMode): Boolean {
+        val ok = packageName != BuildConfig.APPLICATION_ID && when (mode) {
             HailData.MODE_OWNER_HIDE -> HPolicy.setAppHidden(packageName, frozen)
             HailData.MODE_OWNER_SUSPEND -> HPolicy.setAppSuspended(packageName, frozen)
             HailData.MODE_DHIZUKU_HIDE -> HDhizuku.setAppHidden(packageName, frozen)
@@ -137,6 +156,14 @@ object AppManager {
             HailData.MODE_PRIVAPP_DISABLE -> HPackages.setAppDisabled(packageName, frozen)
             else -> false
         }
+        if (ok) {
+            HailData.checkedList.find { it.packageName == packageName }?.let { info ->
+                info.invalidateCaches()
+                info.refreshFromPackageManager()
+            }
+        }
+        return ok
+    }
 
     fun uninstallApp(packageName: String): Boolean {
         when {

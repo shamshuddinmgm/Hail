@@ -1,9 +1,11 @@
 package com.aistra.hail.ui.main
 
+import android.animation.ObjectAnimator
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.Menu
 import android.view.View
+import android.view.animation.AccelerateInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -13,6 +15,7 @@ import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.MenuCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.isVisible
@@ -31,6 +34,8 @@ import com.aistra.hail.ui.home.HomeFragment
 import com.aistra.hail.utils.HPolicy
 import com.aistra.hail.utils.HTheme
 import com.aistra.hail.utils.HUI
+import com.aistra.hail.utils.LandingAnimator
+import com.aistra.hail.utils.LaunchReady
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -44,6 +49,8 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
     private lateinit var navController: NavController
     private lateinit var navHostFragment: NavHostFragment
     private var navChips: List<Pair<Int, View>> = emptyList()
+    private var activityBinding: ActivityMainBinding? = null
+    private var landingPending = false
 
     private val panelNavOptions by lazy {
         val startId = navController.graph.findStartDestination().id
@@ -57,23 +64,66 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
             .setPopExitAnim(R.anim.nav_pop_exit)
             .build()
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        LaunchReady.reset()
+        val splashScreen = installSplashScreen()
+        splashScreen.setKeepOnScreenCondition { LaunchReady.shouldKeepSplash() }
+
         HTheme.applyActivityTheme(this)
         super.onCreate(savedInstanceState)
-        HTheme.enableHighRefreshRate(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // Never keep splash forever (empty list, crash path, slow device)
+        window.decorView.postDelayed({ LaunchReady.markTimedOut() }, 1800L)
+
+        splashScreen.setOnExitAnimationListener { provider ->
+            val icon = provider.iconView
+            icon.animate()
+                .scaleX(0.65f)
+                .scaleY(0.65f)
+                .alpha(0f)
+                .setDuration(260)
+                .setInterpolator(AccelerateInterpolator())
+                .withEndAction {
+                    provider.remove()
+                    playLandingAnimation()
+                }
+                .start()
+            ObjectAnimator.ofFloat(provider.view, View.ALPHA, 1f, 0f).apply {
+                duration = 260
+                start()
+            }
+        }
+
         val binding = try {
             initView()
         } catch (t: Throwable) {
-            // Last-resort: if themed chrome fails to inflate, retry once with stock Theme.Hail
             android.util.Log.e("MainActivity", "initView failed", t)
             setTheme(R.style.Theme_Hail)
+            LaunchReady.markTimedOut()
             initView()
         }
+        activityBinding = binding
+
+        // Prefer 120 Hz after first frame so mode enumeration never delays setContentView
+        window.decorView.post { HTheme.enableHighRefreshRate(this) }
+
+        // Safety: if SplashScreen exit listener is skipped on some OEMs, still land
+        window.decorView.postDelayed({
+            if (landingPending && LaunchReady.shouldKeepSplash().not()) {
+                playLandingAnimation()
+            } else if (landingPending) {
+                LaunchReady.markTimedOut()
+                playLandingAnimation()
+            }
+        }, 2200L)
+
         if (!HailData.biometricLogin || BiometricManager.from(this)
                 .canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL) != BiometricManager.BIOMETRIC_SUCCESS
         ) return
         binding.root.isVisible = false
+        LaunchReady.markHomeReady() // don't block splash behind biometric gate
         val biometricPrompt = BiometricPrompt(
             this,
             ContextCompat.getMainExecutor(this),
@@ -87,6 +137,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
                     binding.root.isVisible = true
+                    playLandingAnimation()
                 }
             })
         val promptInfo = BiometricPrompt.PromptInfo.Builder().setTitle(getString(R.string.action_biometric))
@@ -95,12 +146,35 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         biometricPrompt.authenticate(promptInfo)
     }
 
+    private fun playLandingAnimation() {
+        val binding = activityBinding ?: return
+        if (!landingPending || !binding.root.isVisible) return
+        if (!LaunchReady.consumeLandingSlot()) {
+            // Already played (e.g. process retained) — snap to final state
+            binding.root.alpha = 1f
+            binding.root.translationY = 0f
+            binding.bottomNav?.alpha = 1f
+            binding.bottomNav?.translationY = 0f
+            fab.alpha = 1f
+            fab.scaleX = 1f
+            fab.scaleY = 1f
+            landingPending = false
+            return
+        }
+        landingPending = false
+        LandingAnimator.play(binding.root, binding.bottomNav, fab)
+    }
+
     private fun initView() = ActivityMainBinding.inflate(layoutInflater).apply {
         setContentView(root)
         setSupportActionBar(appBarMain.toolbar)
         fab = appBarMain.fab
         fabContainer = appBarMain.fabContainer!!
         appbar = appBarMain.appBarLayout
+
+        // Soft landing under splash — first paint rises in after splash exits
+        landingPending = true
+        LandingAnimator.prepare(root, bottomNav, fab)
 
         navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
@@ -152,7 +226,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
             bar.applyDefaultInsetter { paddingRelative(isRtl, start = true, end = true, bottom = true) }
         }
 
-        // Landscape: Material NavigationRail (equal items is fine sideways)
+        // Landscape: Material NavigationRail
         val navListener = NavigationBarView.OnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.nav_search -> {

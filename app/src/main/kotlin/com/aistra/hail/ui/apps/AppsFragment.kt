@@ -89,7 +89,7 @@ class AppsFragment : MainFragment(), AppsAdapter.OnItemClickListener, AppsAdapte
             onItemCheckedChangeListener = this@AppsFragment
         }
         binding.refresh.apply {
-            setOnRefreshListener { updateAppList() }
+            setOnRefreshListener { model.updateAppList(forceRefresh = true) }
             applyDefaultInsetter { marginRelative(isRtl, start = !isLandscape, end = true) }
         }
         binding.recyclerView.apply {
@@ -97,13 +97,8 @@ class AppsFragment : MainFragment(), AppsAdapter.OnItemClickListener, AppsAdapte
             layoutManager = GridLayoutManager(activity, resources.getInteger(R.integer.apps_span))
             adapter = appsAdapter
             setHasFixedSize(true)
-            setItemViewCacheSize(20)
-            itemAnimator = androidx.recyclerview.widget.DefaultItemAnimator().apply {
-                addDuration = 120
-                removeDuration = 100
-                moveDuration = 140
-                changeDuration = 100
-            }
+            setItemViewCacheSize(24)
+            itemAnimator = null
             applyDefaultInsetter { paddingRelative(isRtl, bottom = isLandscape) }
             registerForContextMenu(this)
         }
@@ -386,10 +381,10 @@ class AppsFragment : MainFragment(), AppsAdapter.OnItemClickListener, AppsAdapte
     private fun updateAppList() = model.updateAppList()
     private fun updateDisplayAppList() = model.updateDisplayAppList()
 
-    override fun onDestroy() {
+    override fun onDestroyView() {
         runCatching { binding.fastScroll.detach() }
         appsAdapter.onDestroy()
-        super.onDestroy()
+        super.onDestroyView()
         _binding = null
     }
 }
