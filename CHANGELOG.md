@@ -6,6 +6,13 @@ Version format: **`34.52.<revision>-async`**
 
 ---
 
+## [34.52.17-async] — 2026-07-27
+
+### Build
+- Release APKs now signed with a **dedicated release keystore** (`signing.properties` local only)
+
+---
+
 ## [34.52.16-async] — 2026-07-27
 
 ### Added

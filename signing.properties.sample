@@ -1,4 +1,10 @@
-storeFile=filename.keystore
-storePassword=password
-keyAlias=alias
-keyPassword=password
+# Copy this file to signing.properties (repo root) and fill in real values.
+# signing.properties and *.jks / *.keystore are gitignored — never commit them.
+#
+# storeFile is relative to the app/ module directory.
+# Example: keystore sitting in the repo root → ../hail-async-release.jks
+
+storeFile=../hail-async-release.jks
+storePassword=CHANGE_ME
+keyAlias=hail-async
+keyPassword=CHANGE_ME
