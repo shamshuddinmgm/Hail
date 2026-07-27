@@ -122,6 +122,10 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
         if (!HailData.biometricLogin || BiometricManager.from(this)
                 .canAuthenticate(BIOMETRIC_STRONG or DEVICE_CREDENTIAL) != BiometricManager.BIOMETRIC_SUCCESS
         ) return
+        window.setFlags(
+            android.view.WindowManager.LayoutParams.FLAG_SECURE,
+            android.view.WindowManager.LayoutParams.FLAG_SECURE
+        )
         binding.root.isVisible = false
         LaunchReady.markHomeReady() // don't block splash behind biometric gate
         val biometricPrompt = BiometricPrompt(
@@ -136,6 +140,7 @@ class MainActivity : AppCompatActivity(), NavController.OnDestinationChangedList
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
+                    window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
                     binding.root.isVisible = true
                     playLandingAnimation()
                 }

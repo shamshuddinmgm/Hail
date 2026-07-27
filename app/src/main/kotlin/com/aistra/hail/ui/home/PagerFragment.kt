@@ -906,7 +906,7 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
 
         // "Rename tag + manage apps" path — long-press on a tab
         val position = tabs.selectedTabPosition
-        val currentTag = HailData.tags[position]
+        val currentTag = HailData.tags.getOrNull(position) ?: return
         val currentTagId = currentTag.id
 
         // Build the view with ViewBinding equivalent via inflate
@@ -976,19 +976,21 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             .setTitle(R.string.action_tag_set)
             .setView(dialogView)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                // Apply rename
+                // Apply rename — resolve by id in case tabs were reordered while dialog open
+                val idxNow = HailData.tags.indexOfFirst { it.id == currentTagId }
                 val newName = tagNameEdit.text.toString().trim()
-                if (newName.isNotEmpty() && newName != currentTag.name) {
-                    val newTagId = if (position == 0) 0 else newName.hashCode()
+                if (idxNow >= 0 && newName.isNotEmpty() && newName != currentTag.name) {
+                    val newTagId = if (currentTagId == 0) 0 else newName.hashCode()
                     if (!HailData.tags.any { it.name == newName || (it.id == newTagId && it.id != currentTagId) }) {
-                        HailData.tags[position] = com.aistra.hail.app.TagInfo(newName, newTagId, HailData.tags[position].workingMode)
-                        if (position != 0 && newTagId != currentTagId) {
+                        val existing = HailData.tags[idxNow]
+                        HailData.tags[idxNow] = com.aistra.hail.app.TagInfo(newName, newTagId, existing.workingMode)
+                        if (currentTagId != 0 && newTagId != currentTagId) {
                             HailData.checkedList.forEach {
-                                val idx = it.tagIdList.indexOf(currentTagId)
-                                if (idx != -1) it.tagIdList[idx] = newTagId
+                                val i = it.tagIdList.indexOf(currentTagId)
+                                if (i != -1) it.tagIdList[i] = newTagId
                             }
                         }
-                        adapter.notifyItemChanged(position)
+                        adapter.notifyItemChanged(idxNow)
                         HailData.saveTags()
                     }
                 }
@@ -999,7 +1001,7 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             }
 
         // Only show "Remove tag" for non-default tabs
-        if (position != 0) {
+        if (currentTagId != 0) {
             builder.setNeutralButton(R.string.action_tag_remove) { _, _ ->
                 val defaultTagId = 0
                 // Clean ALL home apps, not just the visible/filtered list
@@ -1008,8 +1010,11 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
                         info.tagIdList.add(defaultTagId)
                     }
                 }
-                HailData.tags.removeAt(position)
-                adapter.notifyItemRemoved(position)
+                val removeAt = HailData.tags.indexOfFirst { it.id == currentTagId }
+                if (removeAt >= 0) {
+                    HailData.tags.removeAt(removeAt)
+                    adapter.notifyItemRemoved(removeAt)
+                }
                 if (tabs.tabCount == 1) tabs.isVisible = false
                 HailData.saveApps()
                 HailData.saveTags()
@@ -1248,15 +1253,14 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
 
     private fun importFromClipboard() = runCatching {
         val str = HUI.pasteText() ?: throw IllegalArgumentException()
-        val json = if (str.contains('[')) JSONArray(
-            str.substring(
-                str.indexOf('[')..str.indexOf(']', str.indexOf('['))
-            )
-        )
-        else JSONArray().put(str)
+        val start = str.indexOf('[')
+        val end = if (start >= 0) str.indexOf(']', start) else -1
+        val json = if (start >= 0 && end > start) JSONArray(str.substring(start..end))
+        else JSONArray().put(str.trim())
         var i = 0
         for (index in 0 until json.length()) {
             val pkg = json.getString(index)
+            if (!HPackages.isValidPackageName(pkg)) continue
             if (HPackages.getApplicationInfoOrNull(pkg) != null && !HailData.isChecked(pkg)) {
                 HailData.addCheckedApp(pkg, tag.id, false)
                 i++
@@ -1267,6 +1271,8 @@ class PagerFragment : MainFragment(), PagerAdapter.OnItemClickListener, PagerAda
             updateCurrentList()
         }
         HUI.showToast(getString(R.string.msg_imported, i.toString()))
+    }.onFailure {
+        HUI.showToast(R.string.operation_failed, it.localizedMessage ?: "Unknown", true)
     }
 
     private suspend fun importFrozenApp() = withContext(Dispatchers.IO) {

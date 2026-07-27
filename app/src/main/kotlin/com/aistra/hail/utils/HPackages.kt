@@ -13,6 +13,21 @@ import org.lsposed.hiddenapibypass.HiddenApiBypass
 object HPackages {
     val myUserId get() = android.os.Process.myUserHandle().hashCode()
 
+    private val PACKAGE_NAME_RE =
+        Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")
+
+    /** Reject shell-injection / garbage package strings before they hit pm/su. */
+    fun isValidPackageName(packageName: String?): Boolean =
+        !packageName.isNullOrBlank() &&
+            packageName.length in 3..255 &&
+            PACKAGE_NAME_RE.matches(packageName)
+
+    /** Single-quote for shell; only call after [isValidPackageName]. */
+    fun shellQuote(packageName: String): String {
+        require(isValidPackageName(packageName)) { "Invalid package name: $packageName" }
+        return "'${packageName.replace("'", "'\\''")}'"
+    }
+
     fun packageUri(packageName: String) = "package:$packageName"
 
     @RequiresApi(Build.VERSION_CODES.N)

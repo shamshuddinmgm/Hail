@@ -55,17 +55,21 @@ class QSTileService : TileService() {
     }
 
     private fun updateTile() {
-        qsTile.icon = Icon.createWithResource(
+        val tile = qsTile ?: return
+        tile.icon = Icon.createWithResource(
             this, when (HailData.tileAction) {
                 HailData.ACTION_UNFREEZE_ALL -> R.drawable.ic_round_unfrozen
                 HailData.ACTION_LOCK, HailData.ACTION_LOCK_FREEZE -> R.drawable.ic_outline_lock
                 else -> R.drawable.ic_round_frozen
             }
         )
-        qsTile.label =
-            resources.getStringArray(R.array.tile_action_entries)[HailData.TILE_ACTION_VALUES.indexOf(HailData.tileAction)]
-        qsTile.state =
-            if (HailData.tileAction != HailData.AUTO_FREEZE_AFTER_LOCK || HailData.autoFreezeAfterLock) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
-        qsTile.updateTile()
+        val entries = resources.getStringArray(R.array.tile_action_entries)
+        val index = HailData.TILE_ACTION_VALUES.indexOf(HailData.tileAction)
+        tile.label = if (index in entries.indices) entries[index] else getString(R.string.app_name)
+        tile.state =
+            if (HailData.tileAction != HailData.AUTO_FREEZE_AFTER_LOCK || HailData.autoFreezeAfterLock) {
+                Tile.STATE_ACTIVE
+            } else Tile.STATE_INACTIVE
+        tile.updateTile()
     }
 }

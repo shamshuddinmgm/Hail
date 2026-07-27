@@ -208,10 +208,12 @@ object HShizuku {
     }
 
     fun uninstallApp(packageName: String): Boolean =
-        execute("pm ${if (HPackages.canUninstallNormally(packageName)) "uninstall" else "uninstall --user current"} $packageName").first == 0
+        execute(
+            "pm ${if (HPackages.canUninstallNormally(packageName)) "uninstall" else "uninstall --user current"} ${HPackages.shellQuote(packageName)}"
+        ).first == 0
 
     fun reinstallApp(packageName: String): Boolean =
-        execute("pm install-existing --user current $packageName").first == 0
+        execute("pm install-existing --user current ${HPackages.shellQuote(packageName)}").first == 0
 
     fun execute(command: String, root: Boolean = isRoot): Pair<Int, String?> = runCatching {
         IShizukuService.Stub.asInterface(Shizuku.getBinder()).newProcess(arrayOf(if (root) "su" else "sh"), null, null)

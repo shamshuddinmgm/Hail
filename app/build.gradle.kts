@@ -18,8 +18,8 @@ android {
         minSdk = 23
         targetSdk = 36
         // Format: 34.52.<revision>-async  (revision = feature pushes/commits on this fork)
-        versionCode = 345218
-        versionName = "34.52.18-async"
+        versionCode = 345219
+        versionName = "34.52.19-async"
     }
 
     buildTypes {

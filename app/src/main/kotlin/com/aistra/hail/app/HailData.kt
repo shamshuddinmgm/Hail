@@ -278,8 +278,9 @@ object HailData {
 
     fun saveApps() {
         if (!HFiles.exists(dir)) HFiles.createDirectories(dir)
+        val snapshot = synchronized(checkedList) { checkedList.toList() }
         HFiles.write(appsPath, JSONArray().run {
-            checkedList.forEach {
+            snapshot.forEach {
                 put(
                     JSONObject()
                         .put(KEY_PACKAGE, it.packageName)

@@ -57,7 +57,11 @@ class ApiActivity : ComponentActivity() {
             HailApi.ACTION_LAUNCH -> {
                 val pkg = requirePackage
                 val tagId = runCatching { requireTagId }.getOrNull()
-                val fromShell = referrer?.toString() == "android-app://com.android.shell"
+                // Prefer real caller; ignore spoofable Intent.EXTRA_REFERRER
+                val fromShell = callingPackage == "com.android.shell" ||
+                    (callingPackage == null && !intent.hasExtra(Intent.EXTRA_REFERRER) &&
+                        !intent.hasExtra(Intent.EXTRA_REFERRER_NAME) &&
+                        referrer?.toString() == "android-app://com.android.shell")
                 if (!fromShell && HailData.shortcutLaunchPrompt) {
                     setContent { AppTheme { LaunchPromptDialog(pkg, tagId) } }
                     return false
@@ -240,6 +244,7 @@ class ApiActivity : ComponentActivity() {
     /** Package name, guaranteed to be currently installed. */
     private val requirePackage: String
         get() = packageArg.also {
+            if (!HPackages.isValidPackageName(it)) throw SecurityException("Invalid package name")
             HPackages.getApplicationInfoOrNull(it) ?: throw NameNotFoundException(getString(R.string.app_not_installed))
         }
 
@@ -303,38 +308,30 @@ class ApiActivity : ComponentActivity() {
     }
 
     private fun setAppFrozen(pkg: String, frozen: Boolean, preferredTagId: Int? = null) {
-        val info = HailData.checkedList.find { it.packageName == pkg }
-        when {
-            frozen && info == null -> throw SecurityException("Package not checked: $pkg")
-            else -> {
-                val mode = if (frozen) {
-                    HailData.workingModeForApp(
-                        info ?: throw SecurityException("Package not checked: $pkg"),
-                        preferredTagId
-                    )
-                } else {
-                    info?.frozenMode?.takeIf { it.isNotEmpty() }
-                        ?: HailData.workingModeForApp(
-                            info ?: AppInfo(pkg),
-                            preferredTagId
-                        )
-                }
-                if (AppManager.isAppFrozen(pkg, if (frozen) mode else info?.frozenMode ?: mode) != frozen) {
-                    if (!AppManager.setAppFrozen(pkg, frozen, mode)) {
-                        throw IllegalStateException(getString(R.string.permission_denied_pkg, pkg))
-                    }
-                    if (info != null) {
-                        info.frozenMode = if (frozen) mode else null
-                        HailData.saveApps()
-                    }
-                }
-                HUI.showToast(
-                    if (frozen) R.string.msg_freeze else R.string.msg_unfreeze,
-                    HPackages.getApplicationInfoOrNull(pkg)?.loadLabel(packageManager) ?: pkg
-                )
-                app.setAutoFreezeService()
-            }
+        if (!HPackages.isValidPackageName(pkg)) {
+            throw SecurityException("Invalid package name")
         }
+        val info = HailData.checkedList.find { it.packageName == pkg }
+        // Both freeze and unfreeze require a Hail-managed package (confused-deputy guard)
+        if (info == null) throw SecurityException("Package not checked: $pkg")
+        val mode = if (frozen) {
+            HailData.workingModeForApp(info, preferredTagId)
+        } else {
+            info.frozenMode?.takeIf { it.isNotEmpty() }
+                ?: HailData.workingModeForApp(info, preferredTagId)
+        }
+        if (AppManager.isAppFrozen(pkg, if (frozen) mode else info.frozenMode ?: mode) != frozen) {
+            if (!AppManager.setAppFrozen(pkg, frozen, mode)) {
+                throw IllegalStateException(getString(R.string.permission_denied_pkg, pkg))
+            }
+            info.frozenMode = if (frozen) mode else null
+            HailData.saveApps()
+        }
+        HUI.showToast(
+            if (frozen) R.string.msg_freeze else R.string.msg_unfreeze,
+            HPackages.getApplicationInfoOrNull(pkg)?.loadLabel(packageManager) ?: pkg
+        )
+        app.setAutoFreezeService()
     }
 
     private fun setListFrozen(

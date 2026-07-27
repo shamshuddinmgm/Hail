@@ -40,12 +40,7 @@ object HUI {
                 putExtra("package", packageName)
             })
         }
-        runCatching {
-            app.sendBroadcast(Intent(ACTION_SHIZUKU_REQUIRED).apply {
-                addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-                putExtra("package", packageName)
-            })
-        }
+        // No untargeted broadcast — that leaked package names to any installed receiver.
         if (!HailData.shizukuRequiredNotification) return
         runCatching {
             val channelId = "shizuku_required"

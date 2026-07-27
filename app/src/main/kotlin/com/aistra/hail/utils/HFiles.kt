@@ -77,14 +77,25 @@ object HFiles {
 
     fun write(target: String, text: String): Boolean = runCatching {
         val file = File(target)
-        val parent = file.parentFile
-        val tmp = File(parent, "${file.name}.tmp")
-        tmp.writeText(text)
-        if (!tmp.renameTo(file)) {
-            // Cross-filesystem rename fallback
-            file.writeText(text)
-            tmp.delete()
+        val parent = file.parentFile ?: return@runCatching false
+        if (!parent.exists()) parent.mkdirs()
+        val tmp = File.createTempFile("${file.name}.", ".tmp", parent)
+        try {
+            tmp.writeText(text)
+            // Prefer atomic replace; never truncate the destination on failure
+            if (tmp.renameTo(file)) return@runCatching true
+            if (HTarget.O) {
+                Files.move(
+                    tmp.toPath(),
+                    file.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                )
+                return@runCatching true
+            }
+            false
+        } finally {
+            if (tmp.exists()) tmp.delete()
         }
-        true
     }.getOrDefault(false)
 }

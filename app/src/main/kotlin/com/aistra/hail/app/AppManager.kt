@@ -137,6 +137,7 @@ object AppManager {
         setListFrozen(frozen, appInfo.map { it to mode })
 
     fun setAppFrozen(packageName: String, frozen: Boolean, mode: String = HailData.workingMode): Boolean {
+        if (!HPackages.isValidPackageName(packageName)) return false
         val ok = packageName != BuildConfig.APPLICATION_ID && when (mode) {
             HailData.MODE_OWNER_HIDE -> HPolicy.setAppHidden(packageName, frozen)
             HailData.MODE_OWNER_SUSPEND -> HPolicy.setAppSuspended(packageName, frozen)

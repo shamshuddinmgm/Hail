@@ -6,6 +6,22 @@ Version format: **`34.52.<revision>-async`**
 
 ---
 
+## [34.52.19-async] — 2026-07-27
+
+### Security
+- API unfreeze only for Hail-managed apps (confused-deputy fix)
+- Backup import: validate package names; allowlisted prefs; skip biometric/working_mode
+- Shell/SU package args quoted; reject invalid package strings
+- Spoofable launch-prompt referrer hardened; drop untargeted Shizuku broadcast
+
+### Reliability
+- All-or-nothing settings import (parse before mutate)
+- `saveApps` snapshots list; safer atomic file writes
+- QS tile safe label lookup; tag dialog by id; clipboard import errors shown
+- Direct-boot unlock guard; biometric FLAG_SECURE while locked
+
+---
+
 ## [34.52.18-async] — 2026-07-27
 
 ### Fixed

@@ -21,6 +21,9 @@ class HailApp : Application() {
     override fun onCreate() {
         super.onCreate()
         app = this
+        // Avoid CE SharedPreferences before unlock (direct-boot / LOCKED_BOOT)
+        val unlocked = getSystemService(android.os.UserManager::class.java)?.isUserUnlocked != false
+        if (!unlocked) return
         // DirtyDataUpdater.update(app)
         if (!HTarget.S) setAppTheme(HailData.appTheme)
         if (HailData.workingMode.startsWith(HailData.DHIZUKU)) {

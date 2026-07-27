@@ -18,6 +18,11 @@ class BootCompletedReceiver : BroadcastReceiver() {
             action != Intent.ACTION_LOCKED_BOOT_COMPLETED &&
             action != Intent.ACTION_MY_PACKAGE_REPLACED
         ) return
+        // Credential-encrypted prefs are unavailable until the user unlocks
+        if (action == Intent.ACTION_LOCKED_BOOT_COMPLETED) {
+            val um = context.getSystemService(android.os.UserManager::class.java)
+            if (um != null && !um.isUserUnlocked) return
+        }
         runCatching {
             if (HailData.autoFreezeAfterLock) {
                 app.setAutoFreezeService(true, context.applicationContext)

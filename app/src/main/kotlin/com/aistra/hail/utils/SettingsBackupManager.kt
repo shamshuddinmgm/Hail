@@ -19,6 +19,83 @@ object SettingsBackupManager {
     private const val KEY_PREFERENCES = "preferences"
     private const val BACKUP_VERSION = 2
 
+    private val FLOAT_PREF_KEYS = setOf(HailData.HOME_FONT_SIZE, HailData.AUTO_FREEZE_DELAY)
+
+    /** Keys we export/import — never write arbitrary attacker keys. */
+    private val EXPORT_PREF_KEYS = listOf(
+        HailData.WORKING_MODE,
+        HailData.BIOMETRIC_LOGIN,
+        HailData.APP_THEME,
+        HailData.ICON_PACK,
+        HailData.GRAYSCALE_ICON,
+        HailData.COMPACT_ICON,
+        HailData.SYNTHESIZE_ADAPTIVE_ICONS,
+        HailData.HOME_FONT_SIZE,
+        HailData.FUZZY_SEARCH,
+        HailData.NINE_KEY_SEARCH,
+        HailData.TILE_ACTION,
+        HailData.AUTO_FREEZE_AFTER_LOCK,
+        HailData.AUTO_FREEZE_DELAY,
+        HailData.SKIP_WHILE_CHARGING,
+        HailData.SKIP_FOREGROUND_APP,
+        HailData.SKIP_NOTIFYING_APP,
+        HailData.SHOW_UNINSTALLED,
+        HailData.DYNAMIC_SHORTCUT_ACTION,
+        HailData.FILTER_USER_APPS,
+        HailData.FILTER_SYSTEM_APPS,
+        HailData.FILTER_FROZEN_APPS,
+        HailData.FILTER_UNFROZEN_APPS,
+        HailData.FILTER_ADDED_APPS,
+        HailData.FILTER_UNADDED_APPS,
+        HailData.FILTER_ADDED_USER_APPS,
+        HailData.FILTER_UNADDED_USER_APPS,
+        HailData.FILTER_ADDED_SYSTEM_APPS,
+        HailData.FILTER_UNADDED_SYSTEM_APPS,
+        HailData.SHORTCUT_LAUNCH_PROMPT,
+        HailData.SHIZUKU_REQUIRED_NOTIFICATION,
+        "sort_by",
+    )
+
+    /** Device-local / security-sensitive — never overwrite from a backup file. */
+    private val SKIP_IMPORT_PREF_KEYS = setOf(
+        HailData.WORKING_MODE,
+        HailData.BIOMETRIC_LOGIN,
+    )
+
+    private val STRING_PREF_KEYS = setOf(
+        HailData.WORKING_MODE,
+        HailData.APP_THEME,
+        HailData.ICON_PACK,
+        HailData.TILE_ACTION,
+        HailData.DYNAMIC_SHORTCUT_ACTION,
+        "sort_by",
+    )
+
+    private val BOOLEAN_PREF_KEYS = setOf(
+        HailData.BIOMETRIC_LOGIN,
+        HailData.GRAYSCALE_ICON,
+        HailData.COMPACT_ICON,
+        HailData.SYNTHESIZE_ADAPTIVE_ICONS,
+        HailData.FUZZY_SEARCH,
+        HailData.NINE_KEY_SEARCH,
+        HailData.AUTO_FREEZE_AFTER_LOCK,
+        HailData.SKIP_WHILE_CHARGING,
+        HailData.SKIP_FOREGROUND_APP,
+        HailData.SKIP_NOTIFYING_APP,
+        HailData.SHOW_UNINSTALLED,
+        HailData.FILTER_USER_APPS,
+        HailData.FILTER_SYSTEM_APPS,
+        HailData.FILTER_FROZEN_APPS,
+        HailData.FILTER_UNFROZEN_APPS,
+        HailData.FILTER_ADDED_APPS,
+        HailData.FILTER_UNADDED_APPS,
+        HailData.FILTER_ADDED_USER_APPS,
+        HailData.FILTER_UNADDED_USER_APPS,
+        HailData.FILTER_ADDED_SYSTEM_APPS,
+        HailData.FILTER_UNADDED_SYSTEM_APPS,
+        HailData.SHORTCUT_LAUNCH_PROMPT,
+        HailData.SHIZUKU_REQUIRED_NOTIFICATION,
+    )
     /**
      * Exports all settings (checked apps, tags, hidden apps, and shared preferences) to a JSON file at [uri].
      */
@@ -64,39 +141,7 @@ object SettingsBackupManager {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val prefsObj = JSONObject()
         val allPrefs = sp.all
-        listOf(
-            HailData.WORKING_MODE,
-            HailData.BIOMETRIC_LOGIN,
-            HailData.APP_THEME,
-            HailData.ICON_PACK,
-            HailData.GRAYSCALE_ICON,
-            HailData.COMPACT_ICON,
-            HailData.SYNTHESIZE_ADAPTIVE_ICONS,
-            HailData.HOME_FONT_SIZE,
-            HailData.FUZZY_SEARCH,
-            HailData.NINE_KEY_SEARCH,
-            HailData.TILE_ACTION,
-            HailData.AUTO_FREEZE_AFTER_LOCK,
-            HailData.AUTO_FREEZE_DELAY,
-            HailData.SKIP_WHILE_CHARGING,
-            HailData.SKIP_FOREGROUND_APP,
-            HailData.SKIP_NOTIFYING_APP,
-            HailData.SHOW_UNINSTALLED,
-            HailData.DYNAMIC_SHORTCUT_ACTION,
-            HailData.FILTER_USER_APPS,
-            HailData.FILTER_SYSTEM_APPS,
-            HailData.FILTER_FROZEN_APPS,
-            HailData.FILTER_UNFROZEN_APPS,
-            HailData.FILTER_ADDED_APPS,
-            HailData.FILTER_UNADDED_APPS,
-            HailData.FILTER_ADDED_USER_APPS,
-            HailData.FILTER_UNADDED_USER_APPS,
-            HailData.FILTER_ADDED_SYSTEM_APPS,
-            HailData.FILTER_UNADDED_SYSTEM_APPS,
-            HailData.SHORTCUT_LAUNCH_PROMPT,
-            HailData.SHIZUKU_REQUIRED_NOTIFICATION,
-            "sort_by",
-        ).forEach { key ->
+        EXPORT_PREF_KEYS.forEach { key ->
             allPrefs[key]?.let { value ->
                 when (value) {
                     is Boolean -> prefsObj.put(key, value)
@@ -120,6 +165,7 @@ object SettingsBackupManager {
 
     /**
      * Imports settings from a JSON file at [uri].
+     * Parse+validate fully first; only then mutate live state (all-or-nothing).
      */
     fun importFromUri(context: Context, uri: Uri): Boolean = runCatching {
         val text = context.contentResolver.openInputStream(uri)?.use { stream ->
@@ -128,94 +174,112 @@ object SettingsBackupManager {
 
         val root = JSONObject(text)
 
-        // --- Restore tags (order is preserved from the JSON array) ---
-        val tagsArray = root.optJSONArray(KEY_TAGS)
-        if (tagsArray != null) {
-            HailData.tags.clear()
+        // --- Parse tags into a staging list ---
+        val stagedTags = mutableListOf<com.aistra.hail.app.TagInfo>()
+        root.optJSONArray(KEY_TAGS)?.let { tagsArray ->
             for (i in 0 until tagsArray.length()) {
                 val obj = tagsArray.getJSONObject(i)
-                val name = obj.getString(HailData.KEY_TAG)
-                val id = obj.getInt("id")
-                HailData.tags.add(com.aistra.hail.app.TagInfo(name, id, obj.optString(HailData.WORKING_MODE).ifEmpty { null }))
+                val name = obj.getString(HailData.KEY_TAG).trim()
+                if (name.isEmpty()) continue
+                stagedTags.add(
+                    com.aistra.hail.app.TagInfo(
+                        name = name,
+                        id = obj.getInt("id"),
+                        workingMode = obj.optString(HailData.WORKING_MODE).ifEmpty { null }
+                    )
+                )
             }
-            HailData.ensureDefaultTag()
-            HailData.saveTags()
         }
 
-        // --- Restore checked apps ---
-        val appsArray = root.optJSONArray(KEY_APPS)
-        if (appsArray != null) {
-            HailData.checkedList.clear()
+        // --- Parse apps (drop invalid package names — shell injection guard) ---
+        val stagedApps = mutableListOf<com.aistra.hail.app.AppInfo>()
+        root.optJSONArray(KEY_APPS)?.let { appsArray ->
             for (i in 0 until appsArray.length()) {
                 val obj = appsArray.getJSONObject(i)
                 val packageName = obj.getString(HailData.KEY_PACKAGE)
-                val pinned = obj.optBoolean("pinned", false)
-                val pinOrder = obj.optInt(HailData.KEY_PIN_ORDER, i)
-                val whitelisted = obj.optBoolean("whitelisted", false)
+                if (!HPackages.isValidPackageName(packageName)) continue
+                val prereqPackage = obj.optString(HailData.KEY_PREREQ_PACKAGE).ifEmpty { null }
+                if (prereqPackage != null && !HPackages.isValidPackageName(prereqPackage)) continue
                 val tagsJsonArray = obj.optJSONArray("tags")
                 val tagIdList: MutableList<Int> = if (tagsJsonArray != null) {
                     MutableList(tagsJsonArray.length()) { idx -> tagsJsonArray.getInt(idx) }
                 } else {
                     mutableListOf(0)
                 }
-                val addToHomeScreen = obj.optBoolean("add_to_home_screen", false)
-                val prereqPackage = obj.optString(HailData.KEY_PREREQ_PACKAGE).ifEmpty { null }
-                val prereqLaunch = obj.optBoolean(HailData.KEY_PREREQ_LAUNCH, false)
-                val prereqEnable = obj.optBoolean(HailData.KEY_PREREQ_ENABLE, false)
-                val frozenMode = obj.optString(HailData.KEY_FROZEN_MODE).ifEmpty { null }
-                HailData.checkedList.add(
+                stagedApps.add(
                     com.aistra.hail.app.AppInfo(
                         packageName = packageName,
-                        pinned = pinned,
-                        pinOrder = pinOrder,
-                        whitelisted = whitelisted,
+                        pinned = obj.optBoolean("pinned", false),
+                        pinOrder = obj.optInt(HailData.KEY_PIN_ORDER, i),
+                        whitelisted = obj.optBoolean("whitelisted", false),
                         tagIdList = tagIdList,
-                        addToHomeScreen = addToHomeScreen,
+                        addToHomeScreen = obj.optBoolean("add_to_home_screen", false),
                         prereqPackage = prereqPackage,
-                        prereqLaunch = prereqLaunch,
-                        prereqEnable = prereqEnable,
-                        frozenMode = frozenMode
+                        prereqLaunch = obj.optBoolean(HailData.KEY_PREREQ_LAUNCH, false),
+                        prereqEnable = obj.optBoolean(HailData.KEY_PREREQ_ENABLE, false),
+                        frozenMode = obj.optString(HailData.KEY_FROZEN_MODE).ifEmpty { null }
                     )
                 )
             }
-            HailData.saveApps()
         }
 
-        // --- Restore hidden apps ---
-        val hiddenArray = root.optJSONArray(KEY_HIDDEN_APPS)
-        if (hiddenArray != null) {
-            HailData.hiddenApps.clear()
+        // --- Parse hidden apps ---
+        val stagedHidden = mutableListOf<String>()
+        root.optJSONArray(KEY_HIDDEN_APPS)?.let { hiddenArray ->
             for (i in 0 until hiddenArray.length()) {
-                HailData.hiddenApps.add(hiddenArray.getString(i))
+                val pkg = hiddenArray.getString(i)
+                if (HPackages.isValidPackageName(pkg)) stagedHidden.add(pkg)
             }
-            HailData.saveHiddenApps()
         }
 
-        // --- Restore shared preferences ---
-        val prefsObj = root.optJSONObject(KEY_PREFERENCES)
-        if (prefsObj != null) {
-            val sp = PreferenceManager.getDefaultSharedPreferences(context)
-            val editor = sp.edit()
-            // These are stored as Float in SharedPreferences. JSON may serialize whole-number
-            // floats (e.g. 14.0) as integers, causing a ClassCastException on getFloat() if
-            // we naively write them with putInt().
-            val floatKeys = setOf(HailData.HOME_FONT_SIZE, HailData.AUTO_FREEZE_DELAY)
-            val keys = prefsObj.keys()
-            while (keys.hasNext()) {
-                val key = keys.next()
-                // working_mode is device-specific — skip it to avoid crashing
-                // on devices that don't support the exported mode
-                if (key == HailData.WORKING_MODE) continue
-                when (val value = prefsObj.get(key)) {
-                    is Boolean -> editor.putBoolean(key, value)
-                    is Double -> editor.putFloat(key, value.toFloat())
-                    is Int -> if (key in floatKeys) editor.putFloat(key, value.toFloat())
-                              else editor.putInt(key, value)
-                    is Long -> editor.putLong(key, value)
-                    is String -> editor.putString(key, value)
-                    else -> {}
+        // --- Parse preferences (allowlisted keys + expected types only) ---
+        data class PrefWrite(val key: String, val apply: (android.content.SharedPreferences.Editor) -> Unit)
+        val stagedPrefs = mutableListOf<PrefWrite>()
+        root.optJSONObject(KEY_PREFERENCES)?.let { prefsObj ->
+            for (key in EXPORT_PREF_KEYS) {
+                if (key in SKIP_IMPORT_PREF_KEYS) continue
+                if (!prefsObj.has(key)) continue
+                val value = prefsObj.get(key)
+                when {
+                    key in FLOAT_PREF_KEYS -> {
+                        val f = when (value) {
+                            is Number -> value.toFloat()
+                            else -> continue
+                        }
+                        stagedPrefs.add(PrefWrite(key) { it.putFloat(key, f) })
+                    }
+                    key in BOOLEAN_PREF_KEYS -> {
+                        if (value !is Boolean) continue
+                        stagedPrefs.add(PrefWrite(key) { it.putBoolean(key, value) })
+                    }
+                    key in STRING_PREF_KEYS -> {
+                        if (value !is String) continue
+                        stagedPrefs.add(PrefWrite(key) { it.putString(key, value) })
+                    }
                 }
             }
+        }
+
+        // --- Commit only after full parse succeeded ---
+        if (root.has(KEY_TAGS)) {
+            HailData.tags.clear()
+            HailData.tags.addAll(stagedTags)
+            HailData.ensureDefaultTag()
+            HailData.saveTags()
+        }
+        if (root.has(KEY_APPS)) {
+            HailData.checkedList.clear()
+            HailData.checkedList.addAll(stagedApps)
+            HailData.saveApps()
+        }
+        if (root.has(KEY_HIDDEN_APPS)) {
+            HailData.hiddenApps.clear()
+            HailData.hiddenApps.addAll(stagedHidden)
+            HailData.saveHiddenApps()
+        }
+        if (stagedPrefs.isNotEmpty()) {
+            val editor = PreferenceManager.getDefaultSharedPreferences(context).edit()
+            stagedPrefs.forEach { it.apply(editor) }
             editor.apply()
         }
 
